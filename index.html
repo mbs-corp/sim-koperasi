@@ -163,6 +163,52 @@
         </div>
     </div>
 
+    <!-- MODAL: LAPORAN KEUANGAN UNIT BISNIS -->
+    <div id="unit-bisnis-report-modal-container" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4 border border-slate-100 max-h-[85vh] overflow-y-auto">
+            <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <div class="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-bold text-lg">
+                    <i class="fa-solid fa-chart-simple"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm" id="ub-report-title">Laporan Keuangan Unit</h3>
+                    <p class="text-[11px] text-slate-500">Rekap realisasi transaksi dari akun COA yang terhubung ke unit ini</p>
+                </div>
+            </div>
+            <div id="ub-report-content" class="space-y-4 text-xs">
+                <!-- Populated dynamically by openUnitBisnisReport() -->
+            </div>
+            <div class="flex justify-end pt-2 border-t border-slate-100">
+                <button type="button" onclick="closeUnitBisnisReportModal()" class="bg-brand-600 hover:bg-brand-700 text-white font-medium px-4 py-2 rounded-xl text-xs transition">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: RIWAYAT PEMBAYARAN BUNGA/BAGI HASIL KREDITUR/INVESTOR -->
+    <div id="ki-history-modal-container" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4 border border-slate-100 max-h-[85vh] overflow-y-auto">
+            <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-bold text-lg">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm" id="ki-history-title">Riwayat Pembayaran</h3>
+                    <p class="text-[11px] text-slate-500">Riwayat pembayaran bunga/bagi hasil yang telah diposting ke Beban (akun 5-1150)</p>
+                </div>
+            </div>
+            <div id="ki-history-content" class="space-y-3 text-xs">
+                <!-- Populated dynamically by showKrediturInvestorHistory() -->
+            </div>
+            <div class="flex justify-end pt-2 border-t border-slate-100">
+                <button type="button" onclick="closeKrediturInvestorHistoryModal()" class="bg-brand-600 hover:bg-brand-700 text-white font-medium px-4 py-2 rounded-xl text-xs transition">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- TELLER: MODAL MENUNGGU OTORISASI PIN ANGGOTA -->
     <!-- Ditampilkan di layar Teller setelah tombol "Otorisasi PIN Anggota" diklik. Permintaan
          otorisasi dikirim lewat Firebase ke sesi/perangkat login Anggota yang bersangkutan
@@ -366,7 +412,8 @@
     <div id="teller-receipt-modal-container" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="receipt-frame bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4 border border-slate-100">
             <div class="text-center border-b-2 border-dashed border-slate-300 pb-3 space-y-1">
-                <h3 class="text-sm font-bold uppercase tracking-wide text-slate-900">Koperasi Simpan Pinjam & Serba Usaha</h3>
+                <h3 class="text-sm font-bold uppercase tracking-wide text-slate-900">Koperasi Mitra Usaha Sejahtera</h3>
+                <p class="text-[10px] text-slate-500">Desa Cipadung, Cibiru, Kota Bandung</p>
                 <p class="text-[10px] text-slate-500">Kwitansi Bukti Transaksi Teller</p>
             </div>
             <div class="text-xs space-y-1.5" id="teller-receipt-body">
@@ -716,8 +763,8 @@
                     <i class="fa-solid fa-building-columns text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold leading-tight">SimKop Finansial</h1>
-                    <p class="text-xs text-brand-100">Koperasi Simpan Pinjam & Portal Layanan Anggota</p>
+                    <h1 class="text-lg font-bold leading-tight">Koperasi Mitra Usaha Sejahtera</h1>
+                    <p class="text-xs text-brand-100">Desa Cipadung, Cibiru, Kota Bandung</p>
                 </div>
             </div>
             
@@ -790,6 +837,9 @@
                 <button onclick="switchTab('mitra')" id="tab-mitra" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap admin-only">
                     <i class="fa-solid fa-handshake w-4 text-center"></i> Mitra
                 </button>
+                <button onclick="switchTab('unit-bisnis')" id="tab-unit-bisnis" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap admin-only">
+                    <i class="fa-solid fa-shop w-4 text-center"></i> Unit Bisnis Koperasi
+                </button>
                 <button onclick="switchTab('laporan')" id="tab-laporan" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap admin-only">
                     <i class="fa-solid fa-file-invoice-dollar w-4 text-center"></i> Laporan Keuangan
                 </button>
@@ -799,14 +849,14 @@
                 <button onclick="switchTab('kso')" id="tab-kso" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap admin-only">
                     <i class="fa-solid fa-handshake w-4 text-center"></i> Kerjasama Operasional (KSO)
                 </button>
+                <button onclick="switchTab('kreditur-investor')" id="tab-kreditur-investor" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap admin-only">
+                    <i class="fa-solid fa-sack-dollar w-4 text-center"></i> Kreditur/Investor
+                </button>
                 <button onclick="switchTab('pajak')" id="tab-pajak" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap admin-only">
                     <i class="fa-solid fa-file-invoice-dollar w-4 text-center"></i> Pajak
                 </button>
                 <button onclick="switchTab('manajemen-data')" id="tab-manajemen-data" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap admin-only">
                     <i class="fa-solid fa-database w-4 text-center"></i> Manajemen Data
-                </button>
-                <button onclick="switchTab('akses-pengurus')" id="tab-akses-pengurus" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap hidden">
-                    <i class="fa-solid fa-user-shield w-4 text-center"></i> Akses Pengurus
                 </button>
             </div>
         </nav>
@@ -1998,10 +2048,23 @@
         <section id="view-pengurus" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-4">
                 <div>
-                    <h2 class="text-xl font-bold text-slate-800">Manajemen Pengurus</h2>
-                    <p class="text-sm text-slate-500">Kelola data Pengurus dan Pengawas koperasi (Ketua, Sekretaris, Bendahara, dan lainnya).</p>
+                    <h2 class="text-xl font-bold text-slate-800">Pengurus</h2>
+                    <p class="text-sm text-slate-500">Kelola data Pengurus dan Pengawas koperasi, serta hak akses jabatan masing-masing.</p>
                 </div>
             </div>
+
+            <!-- Pengurus Subtabs -->
+            <div class="bg-slate-200/80 p-1.5 rounded-xl flex flex-wrap gap-1 text-xs font-semibold no-print">
+                <button onclick="switchPengurusSubtab('manajemen')" id="pgr-subtab-manajemen" class="report-subtab active px-4 py-2 rounded-lg text-slate-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-user-tie"></i> Manajemen Pengurus
+                </button>
+                <button onclick="switchPengurusSubtab('akses')" id="pgr-subtab-akses" class="report-subtab px-4 py-2 rounded-lg text-slate-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-user-shield"></i> Akses Pengurus
+                </button>
+            </div>
+
+            <!-- SUB 1: MANAJEMEN PENGURUS -->
+            <div id="pgr-sub-manajemen" class="space-y-6">
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -2095,19 +2158,23 @@
                     </div>
                 </div>
             </div>
-        </section>
 
-        <!-- VIEW: AKSES PENGURUS (Hak Akses Jabatan) -->
-        <section id="view-akses-pengurus" class="hidden space-y-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-4">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-800">Hak Akses Jabatan Pengurus</h2>
-                    <p class="text-sm text-slate-500">Ketua Koperasi otomatis mendapat akses penuh Super Admin. Jabatan pengurus lainnya wajib mengajukan akses modul yang dibutuhkan kepada Ketua untuk disetujui.</p>
+            </div>
+            <!-- END SUB 1: MANAJEMEN PENGURUS -->
+
+            <!-- SUB 2: AKSES PENGURUS (Hak Akses Jabatan) -->
+            <div id="pgr-sub-akses" class="hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Hak Akses Jabatan Pengurus</h2>
+                        <p class="text-sm text-slate-500">Ketua Koperasi otomatis mendapat akses penuh Super Admin. Jabatan pengurus lainnya wajib mengajukan akses modul yang dibutuhkan kepada Ketua untuk disetujui.</p>
+                    </div>
+                </div>
+                <div id="akses-pengurus-content" class="space-y-6">
+                    <!-- Populated dynamically by renderAksesPengurusView() -->
                 </div>
             </div>
-            <div id="akses-pengurus-content" class="space-y-6">
-                <!-- Populated dynamically by renderAksesPengurusView() -->
-            </div>
+            <!-- END SUB 2: AKSES PENGURUS -->
         </section>
 
         <!-- VIEW: PRODUK SIMPANAN -->
@@ -2275,7 +2342,8 @@
             <!-- SUB-REPORT 1: LAPORAN RUGI / LABA -->
             <div id="rep-rugi-laba" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6 print-card">
                 <div class="text-center border-b border-slate-200 pb-4">
-                    <h3 class="text-lg font-bold text-slate-900 uppercase tracking-wide">KOPERASI SIMPAN PINJAM & SERBA USAHA</h3>
+                    <h3 class="text-lg font-bold text-slate-900 uppercase tracking-wide">KOPERASI MITRA USAHA SEJAHTERA</h3>
+                    <p class="text-xs text-slate-500">Desa Cipadung, Cibiru, Kota Bandung</p>
                     <h4 class="text-base font-semibold text-brand-800">LAPORAN RUGI / LABA (SISA HASIL USAHA)</h4>
                     <p class="text-xs text-slate-500 mt-1">Periode Tahun Berjalan 2026</p>
                 </div>
@@ -2329,7 +2397,8 @@
             <!-- SUB-REPORT 2: NERACA -->
             <div id="rep-neraca" class="hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6 print-card">
                 <div class="text-center border-b border-slate-200 pb-4">
-                    <h3 class="text-lg font-bold text-slate-900 uppercase tracking-wide">KOPERASI SIMPAN PINJAM & SERBA USAHA</h3>
+                    <h3 class="text-lg font-bold text-slate-900 uppercase tracking-wide">KOPERASI MITRA USAHA SEJAHTERA</h3>
+                    <p class="text-xs text-slate-500">Desa Cipadung, Cibiru, Kota Bandung</p>
                     <h4 class="text-base font-semibold text-brand-800">NERACA KEUANGAN</h4>
                     <p class="text-xs text-slate-500 mt-1">Per 31 Desember 2026</p>
                 </div>
@@ -2402,7 +2471,8 @@
             <!-- SUB-REPORT 3: ARUS KAS -->
             <div id="rep-arus-kas" class="hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6 print-card">
                 <div class="text-center border-b border-slate-200 pb-4">
-                    <h3 class="text-lg font-bold text-slate-900 uppercase tracking-wide">KOPERASI SIMPAN PINJAM & SERBA USAHA</h3>
+                    <h3 class="text-lg font-bold text-slate-900 uppercase tracking-wide">KOPERASI MITRA USAHA SEJAHTERA</h3>
+                    <p class="text-xs text-slate-500">Desa Cipadung, Cibiru, Kota Bandung</p>
                     <h4 class="text-base font-semibold text-brand-800">LAPORAN ARUS KAS (CASH FLOW)</h4>
                     <p class="text-xs text-slate-500 mt-1">Metode Langsung - Periode 2026</p>
                 </div>
@@ -3363,6 +3433,108 @@
             </div>
         </section>
 
+        <!-- VIEW: UNIT BISNIS KOPERASI -->
+        <section id="view-unit-bisnis" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Unit Bisnis Koperasi</h2>
+                    <p class="text-sm text-slate-500">Kelola unit usaha/sektor riil koperasi (mis. toko, kantin, jasa sewa) dan hubungkan ke akun COA agar laporan pendapatan &amp; beban per unit dapat ditelusuri langsung dari Laporan Keuangan.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-[11px] text-slate-500 uppercase font-semibold">Total Unit Bisnis</div>
+                    <div class="text-xl font-bold text-slate-800 mt-1" id="ub-stat-total">0</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-[11px] text-slate-500 uppercase font-semibold">Unit Aktif</div>
+                    <div class="text-xl font-bold text-emerald-600 mt-1" id="ub-stat-aktif">0</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-[11px] text-slate-500 uppercase font-semibold">Unit Nonaktif</div>
+                    <div class="text-xl font-bold text-slate-500 mt-1" id="ub-stat-nonaktif">0</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Form Tambah/Edit Unit Bisnis -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-fit lg:col-span-1">
+                    <h3 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><i class="fa-solid fa-shop text-brand-600"></i> <span id="ub-form-title">Tambah Unit Bisnis Baru</span></h3>
+                    <form id="form-add-unit-bisnis" onsubmit="saveNewUnitBisnis(event)" class="space-y-3 text-xs">
+                        <input type="hidden" id="ub-input-edit-id" value="">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Nama Unit Bisnis</label>
+                            <input type="text" id="ub-input-name" required placeholder="Contoh: Toko Sembako Koperasi" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Jenis Usaha</label>
+                            <input type="text" id="ub-input-jenis" required placeholder="Contoh: Perdagangan Sembako" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Penanggung Jawab (dari Data Anggota)</label>
+                            <select id="ub-input-pj" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="">-- Pilih Nama Anggota --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Keterangan</label>
+                            <textarea id="ub-input-keterangan" rows="2" placeholder="Catatan tambahan (opsional)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Akun COA Pendapatan Terhubung</label>
+                            <div id="ub-input-coa-pendapatan" class="max-h-32 overflow-y-auto border border-slate-300 rounded-lg p-2 space-y-1">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Akun COA Beban Terhubung</label>
+                            <div id="ub-input-coa-beban" class="max-h-32 overflow-y-auto border border-slate-300 rounded-lg p-2 space-y-1">
+                                <!-- Populated dynamically -->
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1">Akun yang dicentang akan dijumlahkan sebagai realisasi pendapatan/beban unit ini di Laporan Keuangan Unit.</p>
+                        </div>
+                        <div id="ub-form-error" class="hidden p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                            <i class="fa-solid fa-circle-exclamation mr-1"></i> <span id="ub-form-error-text"></span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-xs shadow transition">
+                                <i class="fa-solid fa-floppy-disk mr-1"></i> <span id="ub-form-submit-label">Simpan Unit Bisnis</span>
+                            </button>
+                            <button type="button" id="ub-btn-cancel-edit" onclick="cancelEditUnitBisnis()" class="hidden px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 rounded-lg text-xs transition">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Daftar Unit Bisnis -->
+                <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                        <span class="font-bold text-xs uppercase text-slate-700 tracking-wider">Daftar Unit Bisnis</span>
+                        <span class="text-xs text-slate-500" id="ub-total-label">0 Unit Bisnis</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600">
+                            <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                                <tr>
+                                    <th class="py-2.5 px-3">Nama Unit</th>
+                                    <th class="py-2.5 px-3">Jenis Usaha</th>
+                                    <th class="py-2.5 px-3">Penanggung Jawab</th>
+                                    <th class="py-2.5 px-3 text-center">Akun COA</th>
+                                    <th class="py-2.5 px-3 text-center">Status</th>
+                                    <th class="py-2.5 px-3 text-center no-print">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ub-list-body" class="divide-y divide-slate-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- VIEW: MANAJEMEN DATA (Admin) -->
         <section id="view-manajemen-data" class="hidden space-y-6">
             <div>
@@ -3683,6 +3855,127 @@
             </div>
         </section>
 
+        <!-- VIEW: KREDITUR/INVESTOR -->
+        <section id="view-kreditur-investor" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Kreditur/Investor</h2>
+                    <p class="text-sm text-slate-500">Kelola data pihak eksternal (bukan anggota) yang memberikan pinjaman (Kreditur) atau menanamkan modal (Investor) kepada koperasi, beserta nilai dana, bunga/bagi hasil, dan jangka waktunya.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-[11px] text-slate-500 uppercase font-semibold">Total Kreditur/Investor</div>
+                    <div class="text-xl font-bold text-slate-800 mt-1" id="ki-stat-total">0</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-[11px] text-slate-500 uppercase font-semibold">Kreditur Aktif</div>
+                    <div class="text-xl font-bold text-blue-600 mt-1" id="ki-stat-kreditur">0</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-[11px] text-slate-500 uppercase font-semibold">Investor Aktif</div>
+                    <div class="text-xl font-bold text-emerald-600 mt-1" id="ki-stat-investor">0</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-[11px] text-slate-500 uppercase font-semibold">Total Dana Aktif</div>
+                    <div class="text-xl font-bold text-brand-700 mt-1" id="ki-stat-dana">Rp 0</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Form Tambah/Edit Kreditur/Investor -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-fit lg:col-span-1">
+                    <h3 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><i class="fa-solid fa-sack-dollar text-brand-600"></i> <span id="ki-form-title">Tambah Kreditur/Investor Baru</span></h3>
+                    <form id="form-add-kreditur-investor" onsubmit="saveNewKrediturInvestor(event)" class="space-y-3 text-xs">
+                        <input type="hidden" id="ki-input-edit-id" value="">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Nama Kreditur/Investor</label>
+                            <input type="text" id="ki-input-name" required placeholder="Nama perorangan/lembaga" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Jenis</label>
+                            <select id="ki-input-jenis" required onchange="populateKrediturInvestorCoaOptions()" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="kreditur">Kreditur (Pemberi Pinjaman)</option>
+                                <option value="investor">Investor (Penanam Modal)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Akun COA Terhubung</label>
+                            <select id="ki-input-coa" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <!-- Populated dynamically by populateKrediturInvestorCoaOptions() -->
+                            </select>
+                            <p class="text-[10px] text-slate-400 mt-1">Otomatis terisi sesuai Jenis (Kreditur &rarr; akun Kewajiban, Investor &rarr; akun Ekuitas), namun tetap dapat diganti manual jika diperlukan. Saat data baru disimpan, dana pokok otomatis diposting sebagai transaksi pemasukan ke akun ini.</p>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">No. HP/Kontak</label>
+                            <input type="text" id="ki-input-kontak" placeholder="Contoh: 0812xxxxxxx" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Nominal Dana (Rp)</label>
+                            <input type="number" id="ki-input-nominal" required min="0" placeholder="0" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Bunga/Bagi Hasil (% per tahun)</label>
+                            <input type="number" id="ki-input-bunga" min="0" step="0.01" placeholder="0" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Tanggal Mulai</label>
+                                <input type="date" id="ki-input-tanggal" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Jangka Waktu (bulan)</label>
+                                <input type="number" id="ki-input-jangka" min="0" placeholder="0" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Keterangan</label>
+                            <textarea id="ki-input-keterangan" rows="2" placeholder="Catatan tambahan (opsional)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+                        </div>
+                        <div id="ki-form-error" class="hidden p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                            <i class="fa-solid fa-circle-exclamation mr-1"></i> <span id="ki-form-error-text"></span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-xs shadow transition">
+                                <i class="fa-solid fa-floppy-disk mr-1"></i> <span id="ki-form-submit-label">Simpan Data</span>
+                            </button>
+                            <button type="button" id="ki-btn-cancel-edit" onclick="cancelEditKrediturInvestor()" class="hidden px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 rounded-lg text-xs transition">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Daftar Kreditur/Investor -->
+                <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                        <span class="font-bold text-xs uppercase text-slate-700 tracking-wider">Daftar Kreditur/Investor</span>
+                        <span class="text-xs text-slate-500" id="ki-total-label">0 Data</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600">
+                            <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                                <tr>
+                                    <th class="py-2.5 px-3">Nama</th>
+                                    <th class="py-2.5 px-3 text-center">Jenis</th>
+                                    <th class="py-2.5 px-3">Akun COA</th>
+                                    <th class="py-2.5 px-3 text-right">Nominal Dana</th>
+                                    <th class="py-2.5 px-3 text-center">Bunga/Bagi Hasil</th>
+                                    <th class="py-2.5 px-3 text-center">Jangka Waktu</th>
+                                    <th class="py-2.5 px-3 text-center">Status</th>
+                                    <th class="py-2.5 px-3 text-center no-print">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ki-list-body" class="divide-y divide-slate-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- VIEW: PAJAK (PPN & PPH) -->
         <section id="view-pajak" class="hidden space-y-6">
             <div class="border-b border-slate-200 pb-4">
@@ -3867,8 +4160,10 @@
             { id: 'sukarela', name: 'Simpanan Sukarela/Reguler', type: 'sukarela', min: 10000, max: 5000000, hasMax: true, withdrawable: true, active: true, isDefault: true, desc: 'Simpanan yang dapat disetor dan ditarik sewaktu-waktu oleh anggota, dengan batas maksimal setoran per bulan.' }
         ];
         let savingsProductSeq = 1;
-        // Salinan bawaan produk simpanan standar, dipakai untuk mengembalikan pengaturan
-        // saat fitur "Kosongkan Data" di menu Manajemen Data dijalankan.
+        // Salinan bawaan produk simpanan standar. Catatan: fitur "Kosongkan Data" di menu
+        // Manajemen Data TIDAK LAGI mengembalikan savingsProducts ke daftar ini — produk
+        // simpanan yang sudah terdaftar (termasuk perubahan admin) dibiarkan tetap ada.
+        // Variabel ini disimpan sebagai referensi/cadangan bawaan aplikasi.
         const DEFAULT_SAVINGS_PRODUCTS = JSON.parse(JSON.stringify(savingsProducts));
 
         // Loan Applications List
@@ -3911,11 +4206,13 @@
             { code: '2-1400', name: 'Utang Pajak', category: '2', type: 'liability', desc: 'PPh atau kewajiban pajak terutang' },
             { code: '2-2000', name: 'Kewajiban Jangka Panjang', category: '2', type: 'liability', desc: 'Kelompok akun kewajiban jangka panjang' },
             { code: '2-2100', name: 'Utang Bank / Pihak Ketiga', category: '2', type: 'liability', desc: 'Pinjaman modal kerja dari bank atau LPDB' },
+            { code: '2-2110', name: 'Utang kepada Kreditur (Modul Kreditur/Investor)', category: '2', type: 'liability', desc: 'Utang/pinjaman dari Kreditur non-anggota yang tercatat di modul Kreditur/Investor' },
 
             // 3. EKUITAS (MODAL)
             { code: '3-1100', name: 'Simpanan Pokok', category: '3', type: 'equity', desc: 'Modal awal anggota (tidak dapat diambil selama jadi anggota)' },
             { code: '3-1200', name: 'Simpanan Wajib', category: '3', type: 'equity', desc: 'Iuran rutin bulanan anggota' },
             { code: '3-1300', name: 'Modal Penyertaan', category: '3', type: 'equity', desc: 'Modal tambahan dari luar atau anggota' },
+            { code: '3-1350', name: 'Modal Penyertaan dari Investor (Modul Kreditur/Investor)', category: '3', type: 'equity', desc: 'Modal yang ditanamkan Investor non-anggota yang tercatat di modul Kreditur/Investor' },
             { code: '3-1400', name: 'Cadangan Koperasi', category: '3', type: 'equity', desc: 'Bagian SHU yang disisihkan untuk pemupukan modal' },
             { code: '3-1500', name: 'Hibah / Donasi', category: '3', type: 'equity', desc: 'Aset atau dana hibah dari pemerintah/pihak luar' },
             { code: '3-1600', name: 'SHU Tahun Berjalan', category: '3', type: 'equity', desc: 'Sisa Hasil Usaha yang belum dibagi akhir tahun' },
@@ -3928,10 +4225,12 @@
             { code: '4-2000', name: 'Pendapatan Non-Anggota', category: '4', type: 'income', desc: 'Kelompok akun pendapatan non-anggota' },
             { code: '4-2100', name: 'Pendapatan Jasa Pinjaman Non-Anggota', category: '4', type: 'income', desc: 'Bunga pinjaman dari calon anggota/non-anggota' },
             { code: '4-2200', name: 'Pendapatan Penjualan Usaha Toko', category: '4', type: 'income', desc: 'Hasil penjualan unit toko/sektor riil' },
+            { code: '4-2300', name: 'Pendapatan Unit Bisnis Koperasi', category: '4', type: 'income', desc: 'Hasil usaha/omzet dari seluruh Unit Bisnis Koperasi (toko, jasa, sewa, dan unit usaha lainnya)' },
 
             // 5. BEBAN
             { code: '5-1000', name: 'Beban Operasional', category: '5', type: 'expense', desc: 'Kelompok akun beban operasional' },
             { code: '5-1100', name: 'Beban Bunga Simpanan', category: '5', type: 'expense', desc: 'Bunga/balas jasa simpanan sukarela & berjangka' },
+            { code: '5-1150', name: 'Beban Bunga/Bagi Hasil Kreditur & Investor', category: '5', type: 'expense', desc: 'Pembayaran bunga (Kreditur) atau bagi hasil (Investor) dari modul Kreditur/Investor' },
             { code: '5-1200', name: 'Beban Penyisihan Piutang Ragu-ragu', category: '5', type: 'expense', desc: 'Cadangan risiko kemacetan pinjaman' },
             { code: '5-1300', name: 'Beban Gaji Karyawan & Pengurus', category: '5', type: 'expense', desc: 'Kompensasi operasional rutin' },
             { code: '5-1400', name: 'Beban Listrik, Air, & Internet', category: '5', type: 'expense', desc: 'Operasional kantor harian' },
@@ -3944,13 +4243,36 @@
             { code: '5-4100', name: 'Beban Pajak Pertambahan Nilai (PPN)', category: '5', type: 'expense', desc: 'Beban PPN yang dipungut/disetor atas transaksi kena pajak koperasi' },
             { code: '5-4200', name: 'Beban Pajak Penghasilan (PPh)', category: '5', type: 'expense', desc: 'Beban Pajak Penghasilan (PPh) badan/final atas laba/Sisa Hasil Usaha (SHU) koperasi' },
             { code: '5-5000', name: 'Beban Kerjasama Operasional (KSO)', category: '5', type: 'expense', desc: 'Bagi hasil/beban Kerjasama Operasional (KSO) sebesar persentase tertentu dari laba koperasi sebelum menjadi laba bersih/SHU' },
+            { code: '5-6000', name: 'Beban Modal Awal Unit Bisnis Koperasi', category: '5', type: 'expense', desc: 'Modal awal/investasi yang dikeluarkan koperasi untuk mendirikan atau mengembangkan Unit Bisnis Koperasi' },
+            { code: '5-6100', name: 'Beban Operasional Unit Bisnis Koperasi', category: '5', type: 'expense', desc: 'Pengeluaran operasional harian (belanja stok, sewa tempat, transportasi, dsb.) untuk menjalankan Unit Bisnis Koperasi' },
         ];
-        // Salinan bawaan Bagan Akun (COA) standar, dipakai untuk mengembalikan pengaturan
-        // saat fitur "Kosongkan Data" di menu Manajemen Data dijalankan.
+        // Salinan bawaan Bagan Akun (COA) standar. Catatan: sejak permintaan pengguna,
+        // fitur "Kosongkan Data" TIDAK LAGI mengembalikan coaMaster ke daftar ini —
+        // akun COA yang sudah terdaftar (termasuk penambahan/perubahan admin) dibiarkan
+        // tetap ada. Variabel ini disimpan sebagai referensi/cadangan bawaan aplikasi.
         const DEFAULT_COA_MASTER = JSON.parse(JSON.stringify(coaMaster));
 
         // Financial Transactions Log
         let transactions = [];
+
+        // ==========================================
+        // MODUL UNIT BISNIS KOPERASI
+        // ==========================================
+        // Unit Bisnis: { id, name, jenisUsaha, penanggungJawab, keterangan, isActive,
+        //   incomeCoaCodes: [kode COA kategori 4 yang terhubung],
+        //   expenseCoaCodes: [kode COA kategori 5 yang terhubung] }
+        // Realisasi pendapatan/beban per unit dihitung on-the-fly dari data `transactions`
+        // berdasarkan kode COA yang ditandai terhubung ke unit tersebut, sehingga selalu
+        // sinkron dengan data Laporan Keuangan koperasi.
+        let unitBisnisList = [];
+        let unitBisnisSeq = 1;
+
+        // Daftar Kreditur/Investor: pihak eksternal (bukan anggota) yang memberikan
+        // pinjaman (kreditur) atau menanamkan modal (investor) kepada koperasi.
+        // { id, name, jenis: 'kreditur'|'investor', kontak, nominal, bunga (persen),
+        //   tanggalMulai, jangkaWaktu (bulan), keterangan, isActive }
+        let krediturInvestorList = [];
+        let krediturInvestorSeq = 1;
 
         // ==========================================
         // MODUL KERJASAMA OPERASIONAL (KSO)
@@ -4029,6 +4351,7 @@
             { id: 'laporan', label: 'Laporan Keuangan', icon: 'fa-file-invoice-dollar' },
             { id: 'shu', label: 'SHU', icon: 'fa-coins' },
             { id: 'kso', label: 'Kerjasama Operasional (KSO)', icon: 'fa-handshake' },
+            { id: 'kreditur-investor', label: 'Kreditur/Investor', icon: 'fa-sack-dollar' },
             { id: 'pajak', label: 'Pajak', icon: 'fa-file-invoice-dollar' },
             { id: 'manajemen-data', label: 'Manajemen Data', icon: 'fa-database' }
         ];
@@ -4265,7 +4588,11 @@
                 pengurusList,
                 pengurusSeq,
                 pengurusAccessRequests,
-                pengurusAccessReqSeq
+                pengurusAccessReqSeq,
+                unitBisnisList,
+                unitBisnisSeq,
+                krediturInvestorList,
+                krediturInvestorSeq
             };
         }
 
@@ -4286,6 +4613,17 @@
             members.forEach(m => { if (m.simpananTerkunci === undefined) m.simpananTerkunci = 0; });
             memberTransfers = asArray(data.memberTransfers);
             coaMaster = asArray(data.coaMaster).length ? asArray(data.coaMaster) : coaMaster;
+            // Migrasi data lama: tambahkan akun COA baru yang dibuat setelah data pertama
+            // kali tersimpan di Firebase (mis. 3 akun khusus Unit Bisnis Koperasi) agar
+            // tetap muncul di Bagan Akun pengguna lama, tanpa mengubah/menimpa akun COA
+            // lain yang mungkin sudah dikustomisasi oleh admin.
+            const NEW_COA_CODES_TO_MIGRATE = ['4-2300', '5-6000', '5-6100', '2-2110', '3-1350', '5-1150'];
+            NEW_COA_CODES_TO_MIGRATE.forEach(code => {
+                if (!coaMaster.some(c => c.code === code)) {
+                    const defaultAccount = DEFAULT_COA_MASTER.find(c => c.code === code);
+                    if (defaultAccount) coaMaster.push(JSON.parse(JSON.stringify(defaultAccount)));
+                }
+            });
             transactions = asArray(data.transactions);
             memberSeq = data.memberSeq || memberSeq;
             accountSeq = data.accountSeq || accountSeq;
@@ -4360,6 +4698,16 @@
             pengurusList.forEach(p => { if (!Array.isArray(p.permissions)) p.permissions = []; });
             pengurusAccessRequests = asArray(data.pengurusAccessRequests);
             pengurusAccessReqSeq = data.pengurusAccessReqSeq || pengurusAccessReqSeq;
+            unitBisnisList = asArray(data.unitBisnisList);
+            // Migrasi data lama: pastikan field akun COA yang terhubung selalu berupa array,
+            // meskipun data yang tersimpan di Firebase dibuat sebelum fitur Unit Bisnis ada.
+            unitBisnisList.forEach(u => {
+                if (!Array.isArray(u.incomeCoaCodes)) u.incomeCoaCodes = [];
+                if (!Array.isArray(u.expenseCoaCodes)) u.expenseCoaCodes = [];
+            });
+            unitBisnisSeq = data.unitBisnisSeq || unitBisnisSeq;
+            krediturInvestorList = asArray(data.krediturInvestorList);
+            krediturInvestorSeq = data.krediturInvestorSeq || krediturInvestorSeq;
             // Migrasi data lama: pastikan field isMitra/mitraId selalu ada pada setiap anggota,
             // meskipun data yang tersimpan di Firebase dibuat sebelum fitur Pengajuan Mitra ada.
             members.forEach(m => { if (m.isMitra === undefined) m.isMitra = false; if (m.mitraId === undefined) m.mitraId = null; });
@@ -4711,7 +5059,7 @@
             const memberMitraTab = document.getElementById('tab-member-mitra');
             const memberTransaksiTab = document.getElementById('tab-member-transaksi');
             const tellerTab = document.getElementById('tab-teller');
-            const aksesPengurusTab = document.getElementById('tab-akses-pengurus');
+            const pengurusTab = document.getElementById('tab-pengurus');
 
             adminTabs.forEach(el => el.classList.add('hidden'));
             memberRingkasanTab.classList.add('hidden');
@@ -4720,11 +5068,9 @@
             memberMitraTab.classList.add('hidden');
             memberTransaksiTab.classList.add('hidden');
             tellerTab.classList.add('hidden');
-            if (aksesPengurusTab) aksesPengurusTab.classList.add('hidden');
 
             if (currentUser.role === 'admin') {
                 adminTabs.forEach(el => el.classList.remove('hidden'));
-                if (aksesPengurusTab) aksesPengurusTab.classList.remove('hidden');
                 switchTab(lastSessionTab || 'dashboard');
             } else if (currentUser.role === 'teller') {
                 tellerTab.classList.remove('hidden');
@@ -4741,9 +5087,10 @@
                 memberTransaksiTab.classList.remove('hidden');
 
                 // Pengurus (jabatan dalam lingkup kepengurusan): berikan akses tab
-                // admin-only sesuai hak akses yang berlaku untuk jabatannya.
+                // "Pengurus" (untuk sub menu "Akses Pengurus" miliknya sendiri), serta
+                // akses tab admin-only lain sesuai hak akses yang berlaku untuk jabatannya.
                 if (currentUser.pengurus) {
-                    if (aksesPengurusTab) aksesPengurusTab.classList.remove('hidden');
+                    if (pengurusTab) pengurusTab.classList.remove('hidden');
                     if (currentUser.pengurus.isKetua) {
                         // Ketua Koperasi = akses penuh Super Admin, otomatis, tanpa pengajuan.
                         adminTabs.forEach(el => el.classList.remove('hidden'));
@@ -4790,15 +5137,17 @@
             // Penjaga akses: cegah user berpindah ke tab admin-only yang tidak
             // menjadi haknya (mis. dipanggil manual lewat console), meskipun tombolnya
             // sudah disembunyikan oleh updateUserHeader().
-            const ADMIN_ONLY_TABS = ['keanggotaan', 'pengurus', 'produk-simpanan', 'produk-pinjaman', 'transaksi', 'petugas-teller', 'mitra', 'laporan', 'shu', 'kso', 'pajak', 'manajemen-data'];
-            if (ADMIN_ONLY_TABS.includes(tabId) && !hasAdminModuleAccess(tabId)) {
+            const ADMIN_ONLY_TABS = ['keanggotaan', 'pengurus', 'produk-simpanan', 'produk-pinjaman', 'transaksi', 'petugas-teller', 'mitra', 'unit-bisnis', 'laporan', 'shu', 'kso', 'kreditur-investor', 'pajak', 'manajemen-data'];
+            // Pengecualian tab "pengurus": Pengurus (bukan admin/Ketua & belum tentu
+            // punya modul "pengurus") tetap boleh membuka tab ini karena di dalamnya
+            // memuat sub menu "Akses Pengurus" untuk mengelola/mengajukan akses miliknya
+            // sendiri. Pembatasan detil sub menu mana yang tampil diatur di initPengurusView().
+            const isPengurusSelfAccess = tabId === 'pengurus' && currentUser && currentUser.role === 'member' && currentUser.pengurus;
+            if (ADMIN_ONLY_TABS.includes(tabId) && !hasAdminModuleAccess(tabId) && !isPengurusSelfAccess) {
                 tabId = (currentUser && currentUser.role === 'member') ? 'member-ringkasan' : 'dashboard';
             }
-            if (tabId === 'akses-pengurus' && !(currentUser && (currentUser.role === 'admin' || currentUser.pengurus))) {
-                tabId = 'dashboard';
-            }
 
-            const tabs = ['dashboard', 'member-ringkasan', 'member-tabungan', 'member-profil', 'member-mitra', 'member-transaksi', 'keanggotaan', 'pengurus', 'produk-simpanan', 'produk-pinjaman', 'transaksi', 'teller', 'petugas-teller', 'mitra', 'admin-pinjaman', 'laporan', 'shu', 'kso', 'pajak', 'manajemen-data', 'akses-pengurus'];
+            const tabs = ['dashboard', 'member-ringkasan', 'member-tabungan', 'member-profil', 'member-mitra', 'member-transaksi', 'keanggotaan', 'pengurus', 'produk-simpanan', 'produk-pinjaman', 'transaksi', 'teller', 'petugas-teller', 'mitra', 'unit-bisnis', 'admin-pinjaman', 'laporan', 'shu', 'kso', 'kreditur-investor', 'pajak', 'manajemen-data'];
             tabs.forEach(t => {
                 const view = document.getElementById(`view-${t}`);
                 const btn = document.getElementById(`tab-${t}`);
@@ -4821,8 +5170,7 @@
             if (tabId === 'member-mitra') renderMemberMitraSection();
             if (tabId === 'member-transaksi') switchMemberTransaksiSubtab('transfer');
             if (tabId === 'keanggotaan') renderKeanggotaanView();
-            if (tabId === 'pengurus') renderPengurusView();
-            if (tabId === 'akses-pengurus') renderAksesPengurusView();
+            if (tabId === 'pengurus') initPengurusView();
             if (tabId === 'produk-simpanan') renderSavingsProducts();
             if (tabId === 'produk-pinjaman') { switchLoanProductSubtab('produk'); }
             if (tabId === 'admin-pinjaman') { runOverdueLoanAutoDebit(true); renderAdminLoansTable(); }
@@ -4830,9 +5178,11 @@
             if (tabId === 'teller') renderTellerView();
             if (tabId === 'petugas-teller') renderPetugasTellerView();
             if (tabId === 'mitra') { switchMitraSubtab('data'); }
+            if (tabId === 'unit-bisnis') renderUnitBisnisView();
             if (tabId === 'laporan') renderFinancialReports();
             if (tabId === 'shu' || tabId === 'dashboard') calculateSHUDistribution();
             if (tabId === 'kso') renderKsoView();
+            if (tabId === 'kreditur-investor') renderKrediturInvestorView();
             if (tabId === 'pajak') renderPajakView();
             if (tabId === 'manajemen-data') renderManajemenDataView();
         }
@@ -7667,6 +8017,300 @@
             return coa ? coa.category : null;
         }
 
+        // ==========================================
+        // MODUL UNIT BISNIS KOPERASI (fungsi-fungsi)
+        // ==========================================
+        function generateUnitBisnisId() {
+            const id = `UB${String(unitBisnisSeq).padStart(3, '0')}`;
+            unitBisnisSeq++;
+            return id;
+        }
+
+        // Menyusun daftar checkbox akun COA Pendapatan (kategori 4) & Beban (kategori 5)
+        // pada form Tambah/Edit Unit Bisnis, agar admin bisa memilih akun mana saja yang
+        // realisasinya ikut dihitung sebagai pendapatan/beban unit tersebut.
+        function populateUnitBisnisCoaOptions(selectedIncomeCodes = [], selectedExpenseCodes = []) {
+            const incomeWrap = document.getElementById('ub-input-coa-pendapatan');
+            const expenseWrap = document.getElementById('ub-input-coa-beban');
+            if (!incomeWrap || !expenseWrap) return;
+
+            const incomeAccounts = coaMaster.filter(c => c.category === '4');
+            const expenseAccounts = coaMaster.filter(c => c.category === '5');
+
+            incomeWrap.innerHTML = incomeAccounts.map(c => `
+                <label class="flex items-start gap-2 cursor-pointer hover:bg-slate-50 rounded px-1 py-0.5">
+                    <input type="checkbox" class="ub-coa-pendapatan-check mt-0.5" value="${c.code}" ${selectedIncomeCodes.includes(c.code) ? 'checked' : ''}>
+                    <span><span class="font-mono text-slate-500">${c.code}</span> - ${c.name}</span>
+                </label>
+            `).join('') || `<p class="text-slate-400 text-[11px]">Belum ada akun COA Pendapatan.</p>`;
+
+            expenseWrap.innerHTML = expenseAccounts.map(c => `
+                <label class="flex items-start gap-2 cursor-pointer hover:bg-slate-50 rounded px-1 py-0.5">
+                    <input type="checkbox" class="ub-coa-beban-check mt-0.5" value="${c.code}" ${selectedExpenseCodes.includes(c.code) ? 'checked' : ''}>
+                    <span><span class="font-mono text-slate-500">${c.code}</span> - ${c.name}</span>
+                </label>
+            `).join('') || `<p class="text-slate-400 text-[11px]">Belum ada akun COA Beban.</p>`;
+        }
+
+        function getCheckedUnitBisnisCoa(className) {
+            return Array.from(document.querySelectorAll(`.${className}:checked`)).map(el => el.value);
+        }
+
+        // Menyusun dropdown "Penanggung Jawab" pada form Unit Bisnis dari data Anggota
+        // (mengikuti pola yang sama dengan dropdown Nama di form Pengurus).
+        function populateUnitBisnisPjOptions(selectedName) {
+            const select = document.getElementById('ub-input-pj');
+            if (!select) return;
+            const activeMembers = members.filter(m => !m.isResigned);
+            select.innerHTML = '<option value="">-- Pilih Nama Anggota --</option>' +
+                activeMembers.map(m => `<option value="${m.name}">${m.name} (${m.id})</option>`).join('');
+            if (selectedName) select.value = selectedName;
+        }
+
+        // Menghitung realisasi pendapatan, beban, dan laba/rugi sebuah Unit Bisnis
+        // berdasarkan transaksi (data `transactions`) pada akun COA yang terhubung.
+        // Dihitung on-the-fly (bukan disimpan) supaya selalu sinkron dengan mutasi
+        // terbaru di modul Transaksi Keuangan/Laporan Keuangan.
+        function computeUnitBisnisFinancials(unit) {
+            const incomeCodes = unit.incomeCoaCodes || [];
+            const expenseCodes = unit.expenseCoaCodes || [];
+
+            const incomeBreakdown = incomeCodes.map(code => {
+                const coa = coaMaster.find(c => c.code === code);
+                const total = transactions.filter(t => t.coaCode === code && t.type === 'pemasukan').reduce((sum, t) => sum + t.amount, 0);
+                return { code, name: coa ? coa.name : code, total };
+            });
+            const expenseBreakdown = expenseCodes.map(code => {
+                const coa = coaMaster.find(c => c.code === code);
+                const total = transactions.filter(t => t.coaCode === code && t.type === 'pengeluaran').reduce((sum, t) => sum + t.amount, 0);
+                return { code, name: coa ? coa.name : code, total };
+            });
+
+            const totalIncome = incomeBreakdown.reduce((sum, r) => sum + r.total, 0);
+            const totalExpense = expenseBreakdown.reduce((sum, r) => sum + r.total, 0);
+
+            return {
+                incomeBreakdown,
+                expenseBreakdown,
+                totalIncome,
+                totalExpense,
+                labaRugi: totalIncome - totalExpense
+            };
+        }
+
+        function renderUnitBisnisView() {
+            populateUnitBisnisPjOptions(document.getElementById('ub-input-pj') ? document.getElementById('ub-input-pj').value : '');
+            populateUnitBisnisCoaOptions(
+                document.getElementById('ub-input-edit-id') && document.getElementById('ub-input-edit-id').value
+                    ? (unitBisnisList.find(u => u.id === document.getElementById('ub-input-edit-id').value) || {}).incomeCoaCodes || []
+                    : [],
+                document.getElementById('ub-input-edit-id') && document.getElementById('ub-input-edit-id').value
+                    ? (unitBisnisList.find(u => u.id === document.getElementById('ub-input-edit-id').value) || {}).expenseCoaCodes || []
+                    : []
+            );
+
+            const total = unitBisnisList.length;
+            const aktif = unitBisnisList.filter(u => u.isActive).length;
+            const nonaktif = total - aktif;
+            const totalLabel = document.getElementById('ub-stat-total');
+            const aktifLabel = document.getElementById('ub-stat-aktif');
+            const nonaktifLabel = document.getElementById('ub-stat-nonaktif');
+            if (totalLabel) totalLabel.innerText = total;
+            if (aktifLabel) aktifLabel.innerText = aktif;
+            if (nonaktifLabel) nonaktifLabel.innerText = nonaktif;
+
+            const totalTag = document.getElementById('ub-total-label');
+            if (totalTag) totalTag.innerText = `${total} Unit Bisnis`;
+
+            const body = document.getElementById('ub-list-body');
+            if (!body) return;
+            if (total === 0) {
+                body.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Belum ada data Unit Bisnis. Tambahkan lewat form di samping.</td></tr>`;
+                return;
+            }
+            body.innerHTML = unitBisnisList.map(u => {
+                const coaCount = (u.incomeCoaCodes || []).length + (u.expenseCoaCodes || []).length;
+                return `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-2.5 px-3 font-semibold text-slate-800">${u.name}</td>
+                    <td class="py-2.5 px-3">${u.jenisUsaha || '-'}</td>
+                    <td class="py-2.5 px-3">${u.penanggungJawab || '-'}</td>
+                    <td class="py-2.5 px-3 text-center">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${coaCount ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}">${coaCount ? coaCount + ' Akun' : 'Belum terhubung'}</span>
+                        <button type="button" onclick="openUnitBisnisReport('${u.id}')" title="Lihat Laporan Keuangan Unit" class="ml-1 text-slate-400 hover:text-brand-700"><i class="fa-solid fa-chart-simple"></i></button>
+                    </td>
+                    <td class="py-2.5 px-3 text-center">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${u.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}">${u.isActive ? 'Aktif' : 'Nonaktif'}</span>
+                    </td>
+                    <td class="py-2.5 px-3 text-center no-print">
+                        <div class="flex items-center justify-center gap-2">
+                            <button type="button" onclick="startEditUnitBisnis('${u.id}')" title="Edit" class="text-slate-500 hover:text-brand-700">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button type="button" onclick="toggleUnitBisnisActive('${u.id}')" title="${u.isActive ? 'Nonaktifkan' : 'Aktifkan'}" class="text-slate-500 hover:text-brand-700">
+                                <i class="fa-solid ${u.isActive ? 'fa-toggle-on text-emerald-600' : 'fa-toggle-off'} text-base"></i>
+                            </button>
+                            <button type="button" onclick="deleteUnitBisnis('${u.id}')" title="Hapus" class="text-slate-500 hover:text-rose-600">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            }).join('');
+        }
+
+        function saveNewUnitBisnis(e) {
+            e.preventDefault();
+            const editId = document.getElementById('ub-input-edit-id').value;
+            const name = document.getElementById('ub-input-name').value.trim();
+            const jenisUsaha = document.getElementById('ub-input-jenis').value.trim();
+            const penanggungJawab = document.getElementById('ub-input-pj').value.trim();
+            const keterangan = document.getElementById('ub-input-keterangan').value.trim();
+            const incomeCoaCodes = getCheckedUnitBisnisCoa('ub-coa-pendapatan-check');
+            const expenseCoaCodes = getCheckedUnitBisnisCoa('ub-coa-beban-check');
+
+            const errorBox = document.getElementById('ub-form-error');
+            const errorText = document.getElementById('ub-form-error-text');
+            errorBox.classList.add('hidden');
+
+            if (!name || !jenisUsaha || !penanggungJawab) {
+                errorText.innerText = 'Nama Unit, Jenis Usaha, dan Penanggung Jawab wajib diisi!';
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            if (editId) {
+                const unit = unitBisnisList.find(u => u.id === editId);
+                if (unit) {
+                    unit.name = name;
+                    unit.jenisUsaha = jenisUsaha;
+                    unit.penanggungJawab = penanggungJawab;
+                    unit.keterangan = keterangan;
+                    unit.incomeCoaCodes = incomeCoaCodes;
+                    unit.expenseCoaCodes = expenseCoaCodes;
+                }
+                showModal('Unit Bisnis Diperbarui', `Data Unit Bisnis ${name} berhasil diperbarui.`);
+            } else {
+                unitBisnisList.push({
+                    id: generateUnitBisnisId(),
+                    name, jenisUsaha, penanggungJawab, keterangan,
+                    isActive: true,
+                    incomeCoaCodes,
+                    expenseCoaCodes
+                });
+                showModal('Unit Bisnis Ditambahkan', `Unit Bisnis ${name} berhasil ditambahkan.`);
+            }
+
+            cancelEditUnitBisnis();
+            renderUnitBisnisView();
+            saveStateToFirebase();
+        }
+
+        function startEditUnitBisnis(unitId) {
+            const unit = unitBisnisList.find(u => u.id === unitId);
+            if (!unit) return;
+            document.getElementById('ub-input-edit-id').value = unit.id;
+            document.getElementById('ub-input-name').value = unit.name;
+            document.getElementById('ub-input-jenis').value = unit.jenisUsaha || '';
+            populateUnitBisnisPjOptions(unit.penanggungJawab || '');
+            document.getElementById('ub-input-keterangan').value = unit.keterangan || '';
+            populateUnitBisnisCoaOptions(unit.incomeCoaCodes || [], unit.expenseCoaCodes || []);
+
+            document.getElementById('ub-form-title').innerText = 'Edit Data Unit Bisnis';
+            document.getElementById('ub-form-submit-label').innerText = 'Simpan Perubahan';
+            document.getElementById('ub-btn-cancel-edit').classList.remove('hidden');
+            document.getElementById('form-add-unit-bisnis').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function cancelEditUnitBisnis() {
+            document.getElementById('form-add-unit-bisnis').reset();
+            document.getElementById('ub-input-edit-id').value = '';
+            document.getElementById('ub-form-title').innerText = 'Tambah Unit Bisnis Baru';
+            document.getElementById('ub-form-submit-label').innerText = 'Simpan Unit Bisnis';
+            document.getElementById('ub-btn-cancel-edit').classList.add('hidden');
+            document.getElementById('ub-form-error').classList.add('hidden');
+            populateUnitBisnisPjOptions('');
+            populateUnitBisnisCoaOptions([], []);
+        }
+
+        function toggleUnitBisnisActive(unitId) {
+            const unit = unitBisnisList.find(u => u.id === unitId);
+            if (!unit) return;
+            unit.isActive = !unit.isActive;
+            renderUnitBisnisView();
+            saveStateToFirebase();
+        }
+
+        function deleteUnitBisnis(unitId) {
+            const unit = unitBisnisList.find(u => u.id === unitId);
+            if (!unit) return;
+            if (!confirm(`Hapus data Unit Bisnis "${unit.name}"?`)) return;
+            unitBisnisList = unitBisnisList.filter(u => u.id !== unitId);
+            renderUnitBisnisView();
+            saveStateToFirebase();
+        }
+
+        // Menampilkan modal ringkasan Laporan Keuangan sebuah Unit Bisnis: total
+        // pendapatan, total beban, dan laba/rugi unit, beserta rincian per akun COA
+        // yang terhubung ke unit tersebut (langsung ditarik dari data transaksi yang
+        // sama dengan yang dipakai tab Laporan Keuangan).
+        function openUnitBisnisReport(unitId) {
+            const unit = unitBisnisList.find(u => u.id === unitId);
+            if (!unit) return;
+            const fin = computeUnitBisnisFinancials(unit);
+
+            document.getElementById('ub-report-title').innerText = `Laporan Keuangan - ${unit.name}`;
+
+            const rowsIncome = fin.incomeBreakdown.length
+                ? fin.incomeBreakdown.map(r => `
+                    <div class="flex justify-between border-b border-dashed border-slate-100 py-1">
+                        <span class="text-slate-500"><span class="font-mono">${r.code}</span> ${r.name}</span>
+                        <span class="font-semibold text-emerald-700">${formatRupiah(r.total)}</span>
+                    </div>`).join('')
+                : `<p class="text-slate-400 text-[11px]">Belum ada akun Pendapatan yang terhubung.</p>`;
+
+            const rowsExpense = fin.expenseBreakdown.length
+                ? fin.expenseBreakdown.map(r => `
+                    <div class="flex justify-between border-b border-dashed border-slate-100 py-1">
+                        <span class="text-slate-500"><span class="font-mono">${r.code}</span> ${r.name}</span>
+                        <span class="font-semibold text-rose-700">${formatRupiah(r.total)}</span>
+                    </div>`).join('')
+                : `<p class="text-slate-400 text-[11px]">Belum ada akun Beban yang terhubung.</p>`;
+
+            document.getElementById('ub-report-content').innerHTML = `
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+                        <div class="text-[10px] text-slate-500 uppercase font-semibold">Total Pendapatan</div>
+                        <div class="text-base font-extrabold text-emerald-700">${formatRupiah(fin.totalIncome)}</div>
+                    </div>
+                    <div class="p-3 bg-rose-50 border border-rose-100 rounded-xl">
+                        <div class="text-[10px] text-slate-500 uppercase font-semibold">Total Beban</div>
+                        <div class="text-base font-extrabold text-rose-700">${formatRupiah(fin.totalExpense)}</div>
+                    </div>
+                </div>
+                <div class="p-3 rounded-xl border ${fin.labaRugi >= 0 ? 'bg-brand-50 border-brand-100' : 'bg-amber-50 border-amber-100'} flex justify-between items-center">
+                    <span class="text-xs font-semibold text-slate-700">${fin.labaRugi >= 0 ? 'Laba Unit' : 'Rugi Unit'}</span>
+                    <span class="text-lg font-extrabold ${fin.labaRugi >= 0 ? 'text-brand-700' : 'text-amber-700'}">${formatRupiah(Math.abs(fin.labaRugi))}</span>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-700 text-[11px] uppercase mb-1.5">Rincian Pendapatan per Akun COA</h4>
+                    ${rowsIncome}
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-700 text-[11px] uppercase mb-1.5">Rincian Beban per Akun COA</h4>
+                    ${rowsExpense}
+                </div>
+                <p class="text-[10px] text-slate-400 pt-1 border-t border-slate-100">Angka di atas dihitung otomatis dari seluruh riwayat transaksi pada akun COA yang ditandai terhubung ke unit ini (lihat &amp; kelola sumber datanya di tab Laporan Keuangan / Transaksi Keuangan).</p>
+            `;
+
+            document.getElementById('unit-bisnis-report-modal-container').classList.remove('hidden');
+        }
+
+        function closeUnitBisnisReportModal() {
+            document.getElementById('unit-bisnis-report-modal-container').classList.add('hidden');
+        }
+
         // type: 'pemasukan' (kas masuk) atau 'pengeluaran' (kas keluar)
         function postAutoTransaction(type, coaCode, amount, desc, date) {
             if (!amount || amount <= 0) return;
@@ -8044,6 +8688,292 @@
         }
 
         // ==========================================
+        // MODUL KREDITUR/INVESTOR (fungsi-fungsi)
+        // ==========================================
+        function generateKrediturInvestorId() {
+            const id = `KI${String(krediturInvestorSeq).padStart(3, '0')}`;
+            krediturInvestorSeq++;
+            return id;
+        }
+
+        // Mengisi dropdown "Akun COA Terhubung" sesuai Jenis yang dipilih: Kreditur hanya
+        // menampilkan akun Kewajiban (kategori 2, karena dana Kreditur adalah utang koperasi),
+        // Investor hanya menampilkan akun Ekuitas (kategori 3, karena dana Investor adalah
+        // modal/penyertaan). Ini yang menghubungkan setiap data Kreditur/Investor ke Neraca
+        // lewat Bagan Akun (COA) yang benar.
+        function populateKrediturInvestorCoaOptions(selectedCode) {
+            const select = document.getElementById('ki-input-coa');
+            if (!select) return;
+            const jenis = document.getElementById('ki-input-jenis').value;
+            const category = jenis === 'investor' ? '3' : '2';
+            const defaultCode = jenis === 'investor' ? '3-1350' : '2-2110';
+            const accounts = coaMaster.filter(c => c.category === category && !/000$/.test(c.code));
+            const chosen = selectedCode && accounts.some(c => c.code === selectedCode) ? selectedCode : defaultCode;
+            select.innerHTML = accounts.map(c => `<option value="${c.code}" ${c.code === chosen ? 'selected' : ''}>${c.code} - ${c.name}</option>`).join('');
+        }
+
+        function renderKrediturInvestorView() {
+            populateKrediturInvestorCoaOptions(document.getElementById('ki-input-coa') ? document.getElementById('ki-input-coa').value : '');
+
+            const total = krediturInvestorList.length;
+            const aktifList = krediturInvestorList.filter(k => k.isActive);
+            const kreditur = aktifList.filter(k => k.jenis === 'kreditur').length;
+            const investor = aktifList.filter(k => k.jenis === 'investor').length;
+            const totalDana = aktifList.reduce((sum, k) => sum + (Number(k.nominal) || 0), 0);
+
+            const totalLabel = document.getElementById('ki-stat-total');
+            const kredLabel = document.getElementById('ki-stat-kreditur');
+            const invLabel = document.getElementById('ki-stat-investor');
+            const danaLabel = document.getElementById('ki-stat-dana');
+            if (totalLabel) totalLabel.innerText = total;
+            if (kredLabel) kredLabel.innerText = kreditur;
+            if (invLabel) invLabel.innerText = investor;
+            if (danaLabel) danaLabel.innerText = formatRupiah(totalDana);
+
+            const totalTag = document.getElementById('ki-total-label');
+            if (totalTag) totalTag.innerText = `${total} Data`;
+
+            const body = document.getElementById('ki-list-body');
+            if (!body) return;
+            if (total === 0) {
+                body.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">Belum ada data Kreditur/Investor. Tambahkan lewat form di samping.</td></tr>`;
+                return;
+            }
+            body.innerHTML = krediturInvestorList.map(k => {
+                const coa = coaMaster.find(c => c.code === k.coaCode);
+                return `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-2.5 px-3 font-semibold text-slate-800">${k.name}</td>
+                    <td class="py-2.5 px-3 text-center">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${k.jenis === 'kreditur' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}">${k.jenis === 'kreditur' ? 'Kreditur' : 'Investor'}</span>
+                    </td>
+                    <td class="py-2.5 px-3">
+                        ${coa ? `<span class="font-mono text-[11px] text-brand-800">${coa.code}</span><br><span class="text-[10px] text-slate-400">${coa.name}</span>` : '<span class="text-slate-400">-</span>'}
+                    </td>
+                    <td class="py-2.5 px-3 text-right font-mono">${formatRupiah(k.nominal || 0)}</td>
+                    <td class="py-2.5 px-3 text-center">${k.bunga ? k.bunga + '%/th' : '-'}</td>
+                    <td class="py-2.5 px-3 text-center">${k.jangkaWaktu ? k.jangkaWaktu + ' bln' : '-'}</td>
+                    <td class="py-2.5 px-3 text-center">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${k.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}">${k.isActive ? 'Aktif' : 'Selesai'}</span>
+                    </td>
+                    <td class="py-2.5 px-3 text-center no-print">
+                        <div class="flex items-center justify-center gap-2">
+                            <button type="button" onclick="payBungaKrediturInvestor('${k.id}')" title="Catat Pembayaran Bunga/Bagi Hasil" class="text-slate-500 hover:text-amber-600">
+                                <i class="fa-solid fa-coins"></i>
+                            </button>
+                            <button type="button" onclick="showKrediturInvestorHistory('${k.id}')" title="Riwayat Pembayaran Bunga/Bagi Hasil" class="text-slate-500 hover:text-blue-600">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </button>
+                            <button type="button" onclick="startEditKrediturInvestor('${k.id}')" title="Edit" class="text-slate-500 hover:text-brand-700">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button type="button" onclick="toggleKrediturInvestorActive('${k.id}')" title="${k.isActive ? 'Tandai Selesai' : 'Aktifkan'}" class="text-slate-500 hover:text-brand-700">
+                                <i class="fa-solid ${k.isActive ? 'fa-toggle-on text-emerald-600' : 'fa-toggle-off'} text-base"></i>
+                            </button>
+                            <button type="button" onclick="deleteKrediturInvestor('${k.id}')" title="Hapus" class="text-slate-500 hover:text-rose-600">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            }).join('');
+        }
+
+        function saveNewKrediturInvestor(e) {
+            e.preventDefault();
+            const editId = document.getElementById('ki-input-edit-id').value;
+            const name = document.getElementById('ki-input-name').value.trim();
+            const jenis = document.getElementById('ki-input-jenis').value;
+            const coaCode = document.getElementById('ki-input-coa').value;
+            const kontak = document.getElementById('ki-input-kontak').value.trim();
+            const nominal = parseFloat(document.getElementById('ki-input-nominal').value) || 0;
+            const bunga = parseFloat(document.getElementById('ki-input-bunga').value) || 0;
+            const tanggalMulai = document.getElementById('ki-input-tanggal').value;
+            const jangkaWaktu = parseInt(document.getElementById('ki-input-jangka').value) || 0;
+            const keterangan = document.getElementById('ki-input-keterangan').value.trim();
+
+            const errorBox = document.getElementById('ki-form-error');
+            const errorText = document.getElementById('ki-form-error-text');
+            errorBox.classList.add('hidden');
+
+            if (!name || !jenis || !nominal || !coaCode) {
+                errorText.innerText = 'Nama, Jenis, Akun COA, dan Nominal Dana wajib diisi!';
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            const jenisLabel = jenis === 'kreditur' ? 'Kreditur' : 'Investor';
+
+            if (editId) {
+                const item = krediturInvestorList.find(k => k.id === editId);
+                if (item) {
+                    Object.assign(item, { name, jenis, coaCode, kontak, nominal, bunga, tanggalMulai, jangkaWaktu, keterangan });
+
+                    // Menyinkronkan Laporan Keuangan: cari transaksi penerimaan dana pokok yang
+                    // sebelumnya diposting otomatis untuk data ini (ditandai krediturInvestorId),
+                    // lalu perbarui akun COA/nominal/nama/tanggalnya supaya Neraca, Arus Kas,
+                    // Buku Besar, dan Jurnal Akuntansi ikut mencerminkan perubahan yang dibuat admin.
+                    const fundingTx = transactions.find(t => t.krediturInvestorId === editId && t.type === 'pemasukan');
+                    if (fundingTx) {
+                        const newCoa = coaMaster.find(c => c.code === coaCode);
+                        fundingTx.coaCode = coaCode;
+                        fundingTx.coaName = newCoa ? newCoa.name : fundingTx.coaName;
+                        fundingTx.amount = nominal;
+                        fundingTx.desc = `Penerimaan Dana ${jenisLabel} - ${name} (${editId})`;
+                        if (tanggalMulai) fundingTx.date = tanggalMulai;
+                    }
+                }
+                showModal('Data Diperbarui', `Data ${jenisLabel} ${name} berhasil diperbarui. Transaksi penerimaan dana pokok yang sudah terposting ikut disesuaikan (akun COA & nominal), sehingga Neraca, Arus Kas, Buku Besar, dan Jurnal Akuntansi otomatis ikut berubah.`);
+            } else {
+                const newItem = {
+                    id: generateKrediturInvestorId(),
+                    name, jenis, coaCode, kontak, nominal, bunga, tanggalMulai, jangkaWaktu, keterangan,
+                    isActive: true
+                };
+                krediturInvestorList.push(newItem);
+
+                // Menghubungkan ke sistem akuntansi: dana pokok yang diterima dari
+                // Kreditur/Investor langsung diposting sebagai transaksi pemasukan ke akun
+                // COA Kewajiban/Ekuitas yang dipilih, sehingga otomatis menambah Kas/Bank,
+                // tercermin di Arus Kas (Aktivitas Pendanaan), Buku Besar, dan Jurnal Akuntansi.
+                postAutoTransaction('pemasukan', coaCode, nominal, `Penerimaan Dana ${jenisLabel} - ${name} (${newItem.id})`, tanggalMulai);
+                if (transactions[0]) transactions[0].krediturInvestorId = newItem.id;
+
+                showModal('Data Ditambahkan', `${jenisLabel} ${name} berhasil ditambahkan dan dana sebesar ${formatRupiah(nominal)} otomatis tercatat sebagai transaksi pemasukan ke akun ${coaCode}.`);
+            }
+
+            cancelEditKrediturInvestor();
+            renderKrediturInvestorView();
+            saveStateToFirebase();
+        }
+
+        function startEditKrediturInvestor(id) {
+            const item = krediturInvestorList.find(k => k.id === id);
+            if (!item) return;
+            document.getElementById('ki-input-edit-id').value = item.id;
+            document.getElementById('ki-input-name').value = item.name;
+            document.getElementById('ki-input-jenis').value = item.jenis || 'kreditur';
+            populateKrediturInvestorCoaOptions(item.coaCode || '');
+            document.getElementById('ki-input-kontak').value = item.kontak || '';
+            document.getElementById('ki-input-nominal').value = item.nominal || '';
+            document.getElementById('ki-input-bunga').value = item.bunga || '';
+            document.getElementById('ki-input-tanggal').value = item.tanggalMulai || '';
+            document.getElementById('ki-input-jangka').value = item.jangkaWaktu || '';
+            document.getElementById('ki-input-keterangan').value = item.keterangan || '';
+
+            document.getElementById('ki-form-title').innerText = 'Edit Data Kreditur/Investor';
+            document.getElementById('ki-form-submit-label').innerText = 'Simpan Perubahan';
+            document.getElementById('ki-btn-cancel-edit').classList.remove('hidden');
+            document.getElementById('form-add-kreditur-investor').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function cancelEditKrediturInvestor() {
+            document.getElementById('form-add-kreditur-investor').reset();
+            document.getElementById('ki-input-edit-id').value = '';
+            document.getElementById('ki-form-title').innerText = 'Tambah Kreditur/Investor Baru';
+            document.getElementById('ki-form-submit-label').innerText = 'Simpan Data';
+            document.getElementById('ki-btn-cancel-edit').classList.add('hidden');
+            document.getElementById('ki-form-error').classList.add('hidden');
+            populateKrediturInvestorCoaOptions('');
+        }
+
+        function toggleKrediturInvestorActive(id) {
+            const item = krediturInvestorList.find(k => k.id === id);
+            if (!item) return;
+            item.isActive = !item.isActive;
+            renderKrediturInvestorView();
+            saveStateToFirebase();
+        }
+
+        function deleteKrediturInvestor(id) {
+            const item = krediturInvestorList.find(k => k.id === id);
+            if (!item) return;
+            if (!confirm(`Hapus data "${item.name}"? Transaksi penerimaan dana & pembayaran bunga/bagi hasil yang sudah terposting ke Laporan Keuangan atas nama data ini TIDAK ikut terhapus (tetap tersimpan sebagai riwayat), agar Buku Besar dan Jurnal tetap akurat.`)) return;
+            krediturInvestorList = krediturInvestorList.filter(k => k.id !== id);
+            renderKrediturInvestorView();
+            saveStateToFirebase();
+        }
+
+        // Mencatat pembayaran bunga (Kreditur) atau bagi hasil (Investor) sebagai Beban
+        // (akun COA 5-1150) yang otomatis mengurangi Kas/Bank dan SHU Tahun Berjalan lewat
+        // Laporan Rugi/Laba, Arus Kas, Buku Besar & Jurnal Akuntansi.
+        function payBungaKrediturInvestor(id) {
+            const item = krediturInvestorList.find(k => k.id === id);
+            if (!item) return;
+            const jenisLabel = item.jenis === 'kreditur' ? 'bunga' : 'bagi hasil';
+            const input = prompt(`Masukkan nominal pembayaran ${jenisLabel} untuk ${item.name} (Rp):`, '');
+            if (input === null) return;
+            const amount = parseFloat(input.replace(/[^0-9.]/g, ''));
+            if (!amount || amount <= 0) {
+                showModal('Nominal Tidak Valid', 'Nominal pembayaran harus berupa angka lebih dari 0.', true);
+                return;
+            }
+            postAutoTransaction('pengeluaran', '5-1150', amount, `Pembayaran ${jenisLabel === 'bunga' ? 'Bunga' : 'Bagi Hasil'} - ${item.name} (${item.id})`, new Date().toISOString().split('T')[0]);
+            if (transactions[0]) transactions[0].krediturInvestorId = item.id;
+            showModal('Pembayaran Tercatat', `Pembayaran ${jenisLabel} sebesar ${formatRupiah(amount)} untuk ${item.name} berhasil diposting sebagai Beban ke akun 5-1150.`);
+            renderKrediturInvestorView();
+            saveStateToFirebase();
+        }
+
+        // Menampilkan riwayat seluruh pembayaran bunga (Kreditur) / bagi hasil (Investor)
+        // milik satu data tertentu, diambil dari transaksi Beban (akun 5-1150) yang ditandai
+        // krediturInvestorId saat diposting lewat payBungaKrediturInvestor().
+        function showKrediturInvestorHistory(id) {
+            const item = krediturInvestorList.find(k => k.id === id);
+            if (!item) return;
+            const jenisLabel = item.jenis === 'kreditur' ? 'Bunga' : 'Bagi Hasil';
+
+            const history = transactions
+                .filter(t => t.krediturInvestorId === id && t.type === 'pengeluaran' && t.coaCode === '5-1150')
+                .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+            const totalPaid = history.reduce((sum, t) => sum + t.amount, 0);
+
+            document.getElementById('ki-history-title').innerText = `Riwayat Pembayaran ${jenisLabel} - ${item.name}`;
+
+            const rows = history.length
+                ? history.map(t => `
+                    <tr class="border-b border-slate-100">
+                        <td class="py-2 px-2 whitespace-nowrap">${t.date}</td>
+                        <td class="py-2 px-2">${t.desc}</td>
+                        <td class="py-2 px-2 text-right font-mono font-semibold text-rose-700">${formatRupiah(t.amount)}</td>
+                    </tr>
+                `).join('')
+                : `<tr><td colspan="3" class="text-center py-6 text-slate-400">Belum ada pembayaran ${jenisLabel.toLowerCase()} yang tercatat untuk ${item.name}.</td></tr>`;
+
+            document.getElementById('ki-history-content').innerHTML = `
+                <div class="grid grid-cols-2 gap-3 mb-1">
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                        <div class="text-[10px] text-slate-500 uppercase font-semibold">Nominal Dana Pokok</div>
+                        <div class="text-sm font-bold text-slate-800 mt-0.5">${formatRupiah(item.nominal || 0)}</div>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                        <div class="text-[10px] text-amber-700 uppercase font-semibold">Total ${jenisLabel} Terbayar</div>
+                        <div class="text-sm font-bold text-amber-700 mt-0.5">${formatRupiah(totalPaid)}</div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-100 text-slate-700 uppercase font-semibold">
+                            <tr>
+                                <th class="py-2 px-2">Tanggal</th>
+                                <th class="py-2 px-2">Keterangan</th>
+                                <th class="py-2 px-2 text-right">Nominal</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+
+            document.getElementById('ki-history-modal-container').classList.remove('hidden');
+        }
+
+        function closeKrediturInvestorHistoryModal() {
+            document.getElementById('ki-history-modal-container').classList.add('hidden');
+        }
+
+        // ==========================================
         // SHU RAT ALLOCATION CALCULATOR & LOGIC
         // ==========================================
         function updatePercentages(changedKey) {
@@ -8274,11 +9204,18 @@
             const totalSimpananPokokWajib = members.reduce((sum, m) => sum + m.simpananPokok + m.simpananWajib, 0);
             const totalSimpananSukarela = members.reduce((sum, m) => sum + m.simpananSukarela, 0);
 
+            // Saldo Kreditur (Kewajiban) & Investor (Ekuitas) dari modul Kreditur/Investor,
+            // dihitung langsung dari data aktif di modul tersebut (bukan dari transaksi)
+            // supaya nilainya tetap akurat meskipun akun COA yang dipakai tiap data berbeda-beda.
+            const totalKrediturAktif = krediturInvestorList.filter(k => k.isActive && k.jenis === 'kreditur').reduce((sum, k) => sum + (Number(k.nominal) || 0), 0);
+            const totalInvestorAktif = krediturInvestorList.filter(k => k.isActive && k.jenis === 'investor').reduce((sum, k) => sum + (Number(k.nominal) || 0), 0);
+
             // Catatan: "Hutang Alokasi RAT & SHU" defaultnya 0 karena SHU yang sudah
             // disetujui RAT namun belum dibagikan tidak dilacak sebagai data tersendiri
             // oleh aplikasi ini. Jika ada, catat sebagai transaksi/akun kewajiban terpisah.
             const liabilities = [
                 { name: 'Simpanan Sukarela Anggota', amount: totalSimpananSukarela },
+                { name: 'Utang kepada Kreditur (Pihak Ketiga)', amount: totalKrediturAktif },
                 { name: 'Hutang Alokasi RAT & SHU', amount: 0 }
             ];
             const totalLiabilities = liabilities.reduce((sum, l) => sum + l.amount, 0);
@@ -8287,7 +9224,8 @@
             // Total Aktiva = Total Pasiva, murni dari data riil di atas — tanpa nilai contoh.
             const equity = [
                 { name: 'Modal Simpanan Pokok & Wajib', amount: totalSimpananPokokWajib },
-                { name: 'Dana Cadangan Koperasi', amount: totalAssets - totalLiabilities - totalSimpananPokokWajib }
+                { name: 'Modal Penyertaan dari Investor', amount: totalInvestorAktif },
+                { name: 'Dana Cadangan Koperasi', amount: totalAssets - totalLiabilities - totalSimpananPokokWajib - totalInvestorAktif }
             ];
             const totalEquity = equity.reduce((sum, e) => sum + e.amount, 0);
             const totalPasiva = totalLiabilities + totalEquity;
@@ -8927,6 +9865,7 @@
                 { label: 'Pengajuan Saldo Mitra', value: mitraSaldoRequests.length, icon: 'fa-money-check-dollar' },
                 { label: 'Transaksi Mitra-Anggota', value: mitraMemberTransactions.length, icon: 'fa-store' },
                 { label: 'Pengajuan Mitra Anggota', value: mitraApplications.length, icon: 'fa-user-plus' },
+                { label: 'Unit Bisnis Koperasi', value: unitBisnisList.length, icon: 'fa-shop' },
             ];
             grid.innerHTML = items.map(it => `
                 <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-center">
@@ -9070,15 +10009,12 @@
             memberSeq = 1;
             accountSeq = 1;
             transactionSeq = 1;
-            savingsProducts = JSON.parse(JSON.stringify(DEFAULT_SAVINGS_PRODUCTS));
-            savingsProductSeq = 1;
             loanApplications = [];
             loanProducts = JSON.parse(JSON.stringify(DEFAULT_LOAN_PRODUCTS));
             loanProductSeq = 1;
             loanPayments = [];
             loanPaymentSeq = 1;
             memberTransfers = [];
-            coaMaster = JSON.parse(JSON.stringify(DEFAULT_COA_MASTER));
             transactions = [];
             tellers = [];
             tellerSeq = 1;
@@ -9102,7 +10038,7 @@
             saveStateToFirebase(true);
             refreshCurrentUI();
             renderManajemenDataView();
-            showModal('Data Berhasil Dikosongkan', 'Seluruh data anggota, transaksi, pinjaman, dan petugas teller telah dihapus. Produk simpanan dan Bagan Akun (COA) dikembalikan ke pengaturan standar.');
+            showModal('Data Berhasil Dikosongkan', 'Seluruh data anggota, transaksi, pinjaman, dan petugas teller telah dihapus. Produk Simpanan dan Bagan Akun (COA) yang sudah terdaftar tidak diubah/dikembalikan ke standar.');
         }
 
         // ---------- ADMIN: MANAJEMEN AKUN TELLER ----------
@@ -9489,6 +10425,37 @@
             if (addressInput && !addressInput.value) addressInput.value = member.address || '';
         }
 
+        // Mengatur perpindahan sub menu di dalam tab "Pengurus": "Manajemen Pengurus"
+        // (data pengurus) dan "Akses Pengurus" (hak akses jabatan, sebelumnya tab
+        // terpisah "Akses Pengurus" yang kini dipindah menjadi sub menu di sini).
+        function switchPengurusSubtab(subId) {
+            ['manajemen', 'akses'].forEach(s => {
+                const sec = document.getElementById(`pgr-sub-${s}`);
+                const btn = document.getElementById(`pgr-subtab-${s}`);
+                if (sec) sec.classList.add('hidden');
+                if (btn) btn.classList.remove('active');
+            });
+
+            const activeSec = document.getElementById(`pgr-sub-${subId}`);
+            const activeBtn = document.getElementById(`pgr-subtab-${subId}`);
+            if (activeSec) activeSec.classList.remove('hidden');
+            if (activeBtn) activeBtn.classList.add('active');
+
+            if (subId === 'manajemen') renderPengurusView();
+            if (subId === 'akses') renderAksesPengurusView();
+        }
+
+        // Titik masuk saat tab "Pengurus" dibuka. Pengurus (bukan admin/Ketua) yang
+        // belum diberi modul "pengurus" tidak berhak melihat sub menu "Manajemen
+        // Pengurus", sehingga tombolnya disembunyikan dan diarahkan langsung ke sub
+        // menu "Akses Pengurus" miliknya sendiri.
+        function initPengurusView() {
+            const canManagePengurus = hasAdminModuleAccess('pengurus');
+            const manajemenBtn = document.getElementById('pgr-subtab-manajemen');
+            if (manajemenBtn) manajemenBtn.classList.toggle('hidden', !canManagePengurus);
+            switchPengurusSubtab(canManagePengurus ? 'manajemen' : 'akses');
+        }
+
         function renderPengurusView() {
             populatePengurusMemberOptions(document.getElementById('pgr-input-name') ? document.getElementById('pgr-input-name').value : '');
 
@@ -9524,7 +10491,7 @@
                         ${isKetuaJabatan(p.jabatan)
                             ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-100 text-brand-700"><i class="fa-solid fa-crown mr-1"></i>Super Admin Penuh</span>`
                             : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${(p.permissions||[]).length ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}">${(p.permissions||[]).length ? (p.permissions.length + ' Modul') : 'Belum ada akses'}</span>
-                               <button type="button" onclick="switchTab('akses-pengurus')" title="Kelola Akses" class="ml-1 text-slate-400 hover:text-brand-700"><i class="fa-solid fa-key"></i></button>`
+                               <button type="button" onclick="switchPengurusSubtab('akses')" title="Kelola Akses" class="ml-1 text-slate-400 hover:text-brand-700"><i class="fa-solid fa-key"></i></button>`
                         }
                     </td>
                     <td class="py-2.5 px-3 text-center no-print">
@@ -11624,7 +12591,8 @@
             }
 
             const message = [
-                '*KOPERASI SIMPAN PINJAM & SERBA USAHA*',
+                '*KOPERASI MITRA USAHA SEJAHTERA*',
+                'Desa Cipadung, Cibiru, Kota Bandung',
                 'Selamat Datang, Anggota Baru!',
                 '',
                 `Nama Anggota   : ${member.name}`,
@@ -11666,7 +12634,8 @@
             const jenis = (TELLER_TX_TYPE_META[tx.type] || {}).label || tx.type;
             const saldoTerkini = member ? formatRupiah(member[(TELLER_TX_TYPE_META[tx.type] || {}).savingsField || 'simpananSukarela']) : '-';
             const message = [
-                '*KOPERASI SIMPAN PINJAM & SERBA USAHA*',
+                '*KOPERASI MITRA USAHA SEJAHTERA*',
+                'Desa Cipadung, Cibiru, Kota Bandung',
                 'Kwitansi Bukti Transaksi Teller',
                 '',
                 `No. Kwitansi   : ${tx.receiptNo}`,
