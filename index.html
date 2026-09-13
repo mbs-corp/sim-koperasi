@@ -195,7 +195,7 @@
                 </div>
                 <div>
                     <h3 class="font-bold text-slate-800 text-sm" id="ki-history-title">Riwayat Pembayaran</h3>
-                    <p class="text-[11px] text-slate-500">Riwayat pembayaran bunga/bagi hasil yang telah diposting ke Beban (akun 5-1150)</p>
+                    <p class="text-[11px] text-slate-500">Riwayat pembayaran Pokok dan Bunga/Bagi Hasil yang telah diposting</p>
                 </div>
             </div>
             <div id="ki-history-content" class="space-y-3 text-xs">
@@ -4230,7 +4230,8 @@
             // 5. BEBAN
             { code: '5-1000', name: 'Beban Operasional', category: '5', type: 'expense', desc: 'Kelompok akun beban operasional' },
             { code: '5-1100', name: 'Beban Bunga Simpanan', category: '5', type: 'expense', desc: 'Bunga/balas jasa simpanan sukarela & berjangka' },
-            { code: '5-1150', name: 'Beban Bunga/Bagi Hasil Kreditur & Investor', category: '5', type: 'expense', desc: 'Pembayaran bunga (Kreditur) atau bagi hasil (Investor) dari modul Kreditur/Investor' },
+            { code: '5-1150', name: 'Beban Bunga Kreditur (Pinjaman Pihak Ketiga)', category: '5', type: 'expense', desc: 'Pembayaran bunga pinjaman kepada Kreditur non-anggota dari modul Kreditur/Investor' },
+            { code: '5-1160', name: 'Beban Bagi Hasil Investor', category: '5', type: 'expense', desc: 'Pembayaran bagi hasil kepada Investor non-anggota dari modul Kreditur/Investor' },
             { code: '5-1200', name: 'Beban Penyisihan Piutang Ragu-ragu', category: '5', type: 'expense', desc: 'Cadangan risiko kemacetan pinjaman' },
             { code: '5-1300', name: 'Beban Gaji Karyawan & Pengurus', category: '5', type: 'expense', desc: 'Kompensasi operasional rutin' },
             { code: '5-1400', name: 'Beban Listrik, Air, & Internet', category: '5', type: 'expense', desc: 'Operasional kantor harian' },
@@ -4617,13 +4618,25 @@
             // kali tersimpan di Firebase (mis. 3 akun khusus Unit Bisnis Koperasi) agar
             // tetap muncul di Bagan Akun pengguna lama, tanpa mengubah/menimpa akun COA
             // lain yang mungkin sudah dikustomisasi oleh admin.
-            const NEW_COA_CODES_TO_MIGRATE = ['4-2300', '5-6000', '5-6100', '2-2110', '3-1350', '5-1150'];
+            const NEW_COA_CODES_TO_MIGRATE = ['4-2300', '5-6000', '5-6100', '2-2110', '3-1350', '5-1150', '5-1160'];
             NEW_COA_CODES_TO_MIGRATE.forEach(code => {
                 if (!coaMaster.some(c => c.code === code)) {
                     const defaultAccount = DEFAULT_COA_MASTER.find(c => c.code === code);
                     if (defaultAccount) coaMaster.push(JSON.parse(JSON.stringify(defaultAccount)));
                 }
             });
+            // Migrasi penyesuaian nama: akun 5-1150 semula dibuat untuk menampung Beban
+            // Bunga (Kreditur) & Bagi Hasil (Investor) sekaligus. Sejak dipisah menjadi dua
+            // akun (5-1150 khusus Bunga Kreditur, 5-1160 khusus Bagi Hasil Investor), akun
+            // 5-1150 milik pengguna lama yang masih memakai nama gabungan lama disesuaikan
+            // otomatis ke nama barunya. Akun yang sudah diganti namanya sendiri oleh admin
+            // (nama tidak lagi persis sama dengan nama gabungan lama) TIDAK disentuh.
+            const oldCombinedName = 'Beban Bunga/Bagi Hasil Kreditur & Investor';
+            const acc51150 = coaMaster.find(c => c.code === '5-1150');
+            if (acc51150 && acc51150.name === oldCombinedName) {
+                acc51150.name = 'Beban Bunga Kreditur (Pinjaman Pihak Ketiga)';
+                acc51150.desc = 'Pembayaran bunga pinjaman kepada Kreditur non-anggota dari modul Kreditur/Investor';
+            }
             transactions = asArray(data.transactions);
             memberSeq = data.memberSeq || memberSeq;
             accountSeq = data.accountSeq || accountSeq;
@@ -7690,6 +7703,14 @@
             `).join('');
         }
 
+        // Aturan bisnis Persetujuan Pinjaman: begitu Approver (Admin/Pengurus) klik
+        // "Setujui" pada pengajuan pinjaman, nominal pinjaman LANGSUNG masuk/dikreditkan
+        // ke Saldo Simpanan Sukarela anggota (member.simpananSukarela) dan tercatat
+        // sebagai mutasi debit pada Buku Tabungan-nya, sehingga anggota bisa langsung
+        // memakainya untuk Tarik Tunai, Transfer, maupun Belanja Mitra. Jaminan
+        // pinjaman (simpananTerkunci) dikunci HANYA dari simpanan LAMA anggota
+        // (saldo Sukarela sebelum pencairan ini) -- dana pinjaman yang baru cair
+        // tidak ikut dikunci sebagai jaminannya sendiri.
         function approveLoan(loanId) {
             const loan = loanApplications.find(l => l.id === loanId);
             if (!loan) return;
@@ -7715,17 +7736,36 @@
                 return;
             }
 
+            const approvalDateStr = new Date().toISOString().split('T')[0];
+
             loan.status = 'Disetujui';
             loan.outstandingAmount = loan.amount;
-            loan.collateralAmount = loan.amount;
+
+            // Jaminan pinjaman dikunci HANYA dari simpanan lama anggota (saldo
+            // Sukarela SEBELUM dana pinjaman ini cair) -- bukan dari dana pinjaman
+            // yang baru saja cair. Jika simpanan lama lebih kecil dari nominal
+            // pinjaman, jaminan yang dikunci hanya sebesar simpanan lama yang ada;
+            // selisihnya tidak ikut dikunci.
+            const simpananLamaSebelumCair = member.simpananSukarela || 0;
+            const jaminanDariSimpananLama = Math.min(loan.amount, simpananLamaSebelumCair);
+            loan.collateralAmount = jaminanDariSimpananLama;
+            member.simpananTerkunci = (member.simpananTerkunci || 0) + jaminanDariSimpananLama;
+
             // Jadwalkan jatuh tempo angsuran pertama 1 bulan sejak pencairan, khusus
             // dipakai oleh mekanisme Auto Debet Tunggakan (lihat runOverdueLoanAutoDebit)
-            loan.nextDueDate = addMonthsToDateStr(new Date().toISOString().split('T')[0], 1);
+            loan.nextDueDate = addMonthsToDateStr(approvalDateStr, 1);
             loan.tunggakan = false;
-            member.simpananTerkunci = (member.simpananTerkunci || 0) + loan.amount;
+
+            // Aturan: begitu Approver klik "Setujui", nominal pinjaman langsung
+            // dicairkan/dikreditkan ke Saldo Simpanan Sukarela anggota dan tercatat
+            // pada Buku Tabungan (mutasi debit) miliknya. Dana yang baru cair ini
+            // TIDAK ikut dikunci sebagai jaminan (lihat jaminanDariSimpananLama di
+            // atas), sehingga anggota bisa langsung memakainya.
+            member.simpananSukarela = simpananLamaSebelumCair + loan.amount;
+            savingsMutations.push({ memberId: member.id, date: approvalDateStr, desc: `Pencairan Pinjaman ${loan.id} (${product.name || 'Produk Pinjaman'})`, debit: loan.amount, credit: 0 });
 
             // Add journal/financial entry for loan disbursement (kas keluar -> aset Piutang Pinjaman Anggota)
-            postAutoTransaction('pengeluaran', '1-1300', loan.amount, `Pencairan dana pinjaman ${loan.id} untuk ${loan.memberName} (${loan.memberId})`, new Date().toISOString().split('T')[0]);
+            postAutoTransaction('pengeluaran', '1-1300', loan.amount, `Pencairan dana pinjaman ${loan.id} untuk ${loan.memberName} (${loan.memberId})`, approvalDateStr);
 
             // Increase member participation
             var member = members.find(m => m.id === loan.memberId);
@@ -7735,7 +7775,7 @@
 
             renderAdminLoansTable();
             saveStateToFirebase();
-            showModal('Pinjaman Disetujui!', `Pinjaman ${loan.id} sebesar ${formatRupiah(loan.amount)} atas nama ${loan.memberName} telah disetujui dan dicatat pada buku piutang.`);
+            showModal('Pinjaman Disetujui!', `Pinjaman ${loan.id} sebesar ${formatRupiah(loan.amount)} atas nama ${loan.memberName} telah disetujui, dicatat pada buku piutang, dan langsung dikreditkan ke Saldo Simpanan Sukarela anggota${jaminanDariSimpananLama > 0 ? ` (jaminan ${formatRupiah(jaminanDariSimpananLama)} dikunci dari simpanan lama)` : ''}.`);
         }
 
         function rejectLoan(loanId) {
@@ -8761,7 +8801,10 @@
                             <button type="button" onclick="payBungaKrediturInvestor('${k.id}')" title="Catat Pembayaran Bunga/Bagi Hasil" class="text-slate-500 hover:text-amber-600">
                                 <i class="fa-solid fa-coins"></i>
                             </button>
-                            <button type="button" onclick="showKrediturInvestorHistory('${k.id}')" title="Riwayat Pembayaran Bunga/Bagi Hasil" class="text-slate-500 hover:text-blue-600">
+                            <button type="button" onclick="payPokokKrediturInvestor('${k.id}')" title="Bayar Pokok + Bunga/Jasa (mengurangi Utang/Modal)" class="text-slate-500 hover:text-rose-600">
+                                <i class="fa-solid fa-hand-holding-dollar"></i>
+                            </button>
+                            <button type="button" onclick="showKrediturInvestorHistory('${k.id}')" title="Riwayat Pembayaran" class="text-slate-500 hover:text-blue-600">
                                 <i class="fa-solid fa-clock-rotate-left"></i>
                             </button>
                             <button type="button" onclick="startEditKrediturInvestor('${k.id}')" title="Edit" class="text-slate-500 hover:text-brand-700">
@@ -8896,12 +8939,14 @@
         }
 
         // Mencatat pembayaran bunga (Kreditur) atau bagi hasil (Investor) sebagai Beban
-        // (akun COA 5-1150) yang otomatis mengurangi Kas/Bank dan SHU Tahun Berjalan lewat
-        // Laporan Rugi/Laba, Arus Kas, Buku Besar & Jurnal Akuntansi.
+        // yang otomatis mengurangi Kas/Bank dan SHU Tahun Berjalan lewat Laporan
+        // Rugi/Laba, Arus Kas, Buku Besar & Jurnal Akuntansi. Kreditur diposting ke akun
+        // 5-1150 (Beban Bunga Kreditur), Investor ke akun 5-1160 (Beban Bagi Hasil Investor).
         function payBungaKrediturInvestor(id) {
             const item = krediturInvestorList.find(k => k.id === id);
             if (!item) return;
             const jenisLabel = item.jenis === 'kreditur' ? 'bunga' : 'bagi hasil';
+            const bungaCoaCode = item.jenis === 'kreditur' ? '5-1150' : '5-1160';
             const input = prompt(`Masukkan nominal pembayaran ${jenisLabel} untuk ${item.name} (Rp):`, '');
             if (input === null) return;
             const amount = parseFloat(input.replace(/[^0-9.]/g, ''));
@@ -8909,47 +8954,121 @@
                 showModal('Nominal Tidak Valid', 'Nominal pembayaran harus berupa angka lebih dari 0.', true);
                 return;
             }
-            postAutoTransaction('pengeluaran', '5-1150', amount, `Pembayaran ${jenisLabel === 'bunga' ? 'Bunga' : 'Bagi Hasil'} - ${item.name} (${item.id})`, new Date().toISOString().split('T')[0]);
+            postAutoTransaction('pengeluaran', bungaCoaCode, amount, `Pembayaran ${jenisLabel === 'bunga' ? 'Bunga' : 'Bagi Hasil'} - ${item.name} (${item.id})`, new Date().toISOString().split('T')[0]);
             if (transactions[0]) transactions[0].krediturInvestorId = item.id;
-            showModal('Pembayaran Tercatat', `Pembayaran ${jenisLabel} sebesar ${formatRupiah(amount)} untuk ${item.name} berhasil diposting sebagai Beban ke akun 5-1150.`);
+            showModal('Pembayaran Tercatat', `Pembayaran ${jenisLabel} sebesar ${formatRupiah(amount)} untuk ${item.name} berhasil diposting sebagai Beban ke akun ${bungaCoaCode}.`);
             renderKrediturInvestorView();
             saveStateToFirebase();
         }
 
-        // Menampilkan riwayat seluruh pembayaran bunga (Kreditur) / bagi hasil (Investor)
-        // milik satu data tertentu, diambil dari transaksi Beban (akun 5-1150) yang ditandai
-        // krediturInvestorId saat diposting lewat payBungaKrediturInvestor().
+        // Mencatat pembayaran cicilan/pelunasan yang terdiri dari Pokok + Bunga/Jasa
+        // sekaligus. Bagian POKOK diposting sebagai pengeluaran ke akun COA Kewajiban/
+        // Ekuitas yang sama dengan yang menampung dana ini (item.coaCode), sehingga
+        // mengurangi Kas DAN benar-benar mengurangi saldo Utang/Modal Penyertaan di
+        // Neraca (nominal outstanding pada data ini ikut dikurangi). Bagian BUNGA/JASA
+        // diposting terpisah sebagai Beban (5-1150/5-1160) yang mengurangi SHU. Jika
+        // pokok terbayar lunas, status data otomatis diubah menjadi "Selesai".
+        function payPokokKrediturInvestor(id) {
+            const item = krediturInvestorList.find(k => k.id === id);
+            if (!item) return;
+            const jenisLabel = item.jenis === 'kreditur' ? 'Kreditur' : 'Investor';
+            const bungaLabel = item.jenis === 'kreditur' ? 'Bunga' : 'Bagi Hasil';
+            const bungaCoaCode = item.jenis === 'kreditur' ? '5-1150' : '5-1160';
+            const sisaLabel = item.jenis === 'kreditur' ? 'sisa utang' : 'sisa modal penyertaan';
+
+            const pokokInput = prompt(`Nominal PEMBAYARAN POKOK untuk ${item.name} (${sisaLabel} saat ini: ${formatRupiah(item.nominal || 0)}):`, '');
+            if (pokokInput === null) return;
+            const pokokAmount = parseFloat(pokokInput.replace(/[^0-9.]/g, '')) || 0;
+            if (pokokAmount <= 0) {
+                showModal('Nominal Tidak Valid', 'Nominal pembayaran pokok harus berupa angka lebih dari 0.', true);
+                return;
+            }
+            if (pokokAmount > (item.nominal || 0)) {
+                showModal('Nominal Melebihi Sisa', `Nominal pembayaran pokok (${formatRupiah(pokokAmount)}) melebihi ${sisaLabel} saat ini (${formatRupiah(item.nominal || 0)}). Masukkan nominal yang lebih kecil atau sama dengan sisa tersebut.`, true);
+                return;
+            }
+
+            const bungaInput = prompt(`Nominal ${bungaLabel} yang dibayar bersamaan (opsional, kosongkan/isi 0 jika tidak ada):`, '0');
+            const bungaAmount = bungaInput === null ? 0 : (parseFloat(bungaInput.replace(/[^0-9.]/g, '')) || 0);
+
+            const today = new Date().toISOString().split('T')[0];
+
+            // Posting Pokok: mengurangi Kas & langsung mengurangi akun Kewajiban/Ekuitas
+            // yang sama dengan akun penerimaan dana semula, agar Neraca konsisten.
+            postAutoTransaction('pengeluaran', item.coaCode, pokokAmount, `Pembayaran Pokok ${jenisLabel} - ${item.name} (${item.id})`, today);
+            if (transactions[0]) transactions[0].krediturInvestorId = item.id;
+
+            // Posting Bunga/Jasa (jika ada): mengurangi Kas & tercatat sebagai Beban.
+            if (bungaAmount > 0) {
+                postAutoTransaction('pengeluaran', bungaCoaCode, bungaAmount, `Pembayaran ${bungaLabel} bersamaan Pelunasan Pokok - ${item.name} (${item.id})`, today);
+                if (transactions[0]) transactions[0].krediturInvestorId = item.id;
+            }
+
+            item.nominal = Math.max(0, (item.nominal || 0) - pokokAmount);
+            let statusNote = '';
+            if (item.nominal === 0 && item.isActive) {
+                item.isActive = false;
+                statusNote = ` ${sisaLabel.charAt(0).toUpperCase() + sisaLabel.slice(1)} telah lunas, status otomatis diubah menjadi "Selesai".`;
+            }
+
+            showModal(
+                'Pembayaran Tercatat',
+                `Pembayaran pokok ${formatRupiah(pokokAmount)}${bungaAmount > 0 ? ` + ${bungaLabel.toLowerCase()} ${formatRupiah(bungaAmount)}` : ''} untuk ${item.name} berhasil diposting. ${sisaLabel.charAt(0).toUpperCase() + sisaLabel.slice(1)} sekarang: ${formatRupiah(item.nominal)}.${statusNote}`
+            );
+            renderKrediturInvestorView();
+            saveStateToFirebase();
+        }
+
+        // Menampilkan riwayat seluruh pembayaran (Pokok & Bunga/Bagi Hasil) milik satu data
+        // Kreditur/Investor tertentu, diambil dari transaksi Beban (akun 5-1150/5-1160) dan
+        // transaksi pengurangan Pokok (akun Kewajiban/Ekuitas item.coaCode) yang ditandai
+        // krediturInvestorId saat diposting lewat payBungaKrediturInvestor() /
+        // payPokokKrediturInvestor().
         function showKrediturInvestorHistory(id) {
             const item = krediturInvestorList.find(k => k.id === id);
             if (!item) return;
-            const jenisLabel = item.jenis === 'kreditur' ? 'Bunga' : 'Bagi Hasil';
+            const bungaLabel = item.jenis === 'kreditur' ? 'Bunga' : 'Bagi Hasil';
+            const bungaCoaCode = item.jenis === 'kreditur' ? '5-1150' : '5-1160';
+            const sisaLabel = item.jenis === 'kreditur' ? 'Sisa Utang' : 'Sisa Modal Penyertaan';
 
-            const history = transactions
-                .filter(t => t.krediturInvestorId === id && t.type === 'pengeluaran' && t.coaCode === '5-1150')
-                .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-            const totalPaid = history.reduce((sum, t) => sum + t.amount, 0);
+            const bungaHistory = transactions.filter(t => t.krediturInvestorId === id && t.type === 'pengeluaran' && t.coaCode === bungaCoaCode);
+            const pokokHistory = transactions.filter(t => t.krediturInvestorId === id && t.type === 'pengeluaran' && t.coaCode === item.coaCode);
+            const totalBunga = bungaHistory.reduce((sum, t) => sum + t.amount, 0);
+            const totalPokokDibayar = pokokHistory.reduce((sum, t) => sum + t.amount, 0);
 
-            document.getElementById('ki-history-title').innerText = `Riwayat Pembayaran ${jenisLabel} - ${item.name}`;
+            const combined = [
+                ...bungaHistory.map(t => ({ ...t, jenisBayar: bungaLabel, color: 'text-amber-700' })),
+                ...pokokHistory.map(t => ({ ...t, jenisBayar: 'Pokok', color: 'text-rose-700' }))
+            ].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-            const rows = history.length
-                ? history.map(t => `
+            document.getElementById('ki-history-title').innerText = `Riwayat Pembayaran - ${item.name}`;
+
+            const rows = combined.length
+                ? combined.map(t => `
                     <tr class="border-b border-slate-100">
                         <td class="py-2 px-2 whitespace-nowrap">${t.date}</td>
+                        <td class="py-2 px-2">
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${t.jenisBayar === 'Pokok' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}">${t.jenisBayar}</span>
+                        </td>
                         <td class="py-2 px-2">${t.desc}</td>
-                        <td class="py-2 px-2 text-right font-mono font-semibold text-rose-700">${formatRupiah(t.amount)}</td>
+                        <td class="py-2 px-2 text-right font-mono font-semibold ${t.color}">${formatRupiah(t.amount)}</td>
                     </tr>
                 `).join('')
-                : `<tr><td colspan="3" class="text-center py-6 text-slate-400">Belum ada pembayaran ${jenisLabel.toLowerCase()} yang tercatat untuk ${item.name}.</td></tr>`;
+                : `<tr><td colspan="4" class="text-center py-6 text-slate-400">Belum ada pembayaran pokok maupun ${bungaLabel.toLowerCase()} yang tercatat untuk ${item.name}.</td></tr>`;
 
             document.getElementById('ki-history-content').innerHTML = `
-                <div class="grid grid-cols-2 gap-3 mb-1">
+                <div class="grid grid-cols-3 gap-2 mb-1">
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                        <div class="text-[10px] text-slate-500 uppercase font-semibold">Nominal Dana Pokok</div>
+                        <div class="text-[10px] text-slate-500 uppercase font-semibold">${sisaLabel} Saat Ini</div>
                         <div class="text-sm font-bold text-slate-800 mt-0.5">${formatRupiah(item.nominal || 0)}</div>
                     </div>
+                    <div class="bg-rose-50 border border-rose-200 rounded-xl p-3">
+                        <div class="text-[10px] text-rose-700 uppercase font-semibold">Total Pokok Terbayar</div>
+                        <div class="text-sm font-bold text-rose-700 mt-0.5">${formatRupiah(totalPokokDibayar)}</div>
+                    </div>
                     <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
-                        <div class="text-[10px] text-amber-700 uppercase font-semibold">Total ${jenisLabel} Terbayar</div>
-                        <div class="text-sm font-bold text-amber-700 mt-0.5">${formatRupiah(totalPaid)}</div>
+                        <div class="text-[10px] text-amber-700 uppercase font-semibold">Total ${bungaLabel} Terbayar</div>
+                        <div class="text-sm font-bold text-amber-700 mt-0.5">${formatRupiah(totalBunga)}</div>
                     </div>
                 </div>
                 <div class="overflow-x-auto border border-slate-200 rounded-xl">
@@ -8957,6 +9076,7 @@
                         <thead class="bg-slate-100 text-slate-700 uppercase font-semibold">
                             <tr>
                                 <th class="py-2 px-2">Tanggal</th>
+                                <th class="py-2 px-2">Jenis</th>
                                 <th class="py-2 px-2">Keterangan</th>
                                 <th class="py-2 px-2 text-right">Nominal</th>
                             </tr>
