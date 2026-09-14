@@ -834,6 +834,9 @@
                 <button onclick="switchTab('petugas-teller')" id="tab-petugas-teller" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap admin-only">
                     <i class="fa-solid fa-user-tie w-4 text-center"></i> Petugas Teller
                 </button>
+                <button onclick="switchTab('rekening-bank')" id="tab-rekening-bank" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap admin-only">
+                    <i class="fa-solid fa-building-columns w-4 text-center"></i> Rekening Bank Koperasi
+                </button>
                 <button onclick="switchTab('mitra')" id="tab-mitra" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap admin-only">
                     <i class="fa-solid fa-handshake w-4 text-center"></i> Mitra
                 </button>
@@ -994,6 +997,7 @@
                                 <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
                                     <tr>
                                         <th class="py-2.5 px-3">Tanggal</th>
+                                        <th class="py-2.5 px-3">Jam</th>
                                         <th class="py-2.5 px-3">Keterangan</th>
                                         <th class="py-2.5 px-3">Jenis COA</th>
                                         <th class="py-2.5 px-3 text-right">Setoran (Rp)</th>
@@ -1010,9 +1014,93 @@
                 </div>
             </div>
 
+            <!-- MEMBER: SETORAN SIMPANAN VIA TRANSFER BANK -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                <!-- Form Pengajuan -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm lg:col-span-1 space-y-4">
+                    <div class="border-b border-slate-100 pb-3">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-building-columns text-brand-600"></i> Setoran Simpanan via Transfer Bank
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-1">Transfer sejumlah dana ke rekening bank koperasi terlebih dahulu, lalu catat setoran Anda di form ini.</p>
+                    </div>
+
+                    <div id="msd-bank-accounts-info">
+                        <!-- Populated dynamically by renderCoopBankAccountsInfo() -->
+                    </div>
+
+                    <div class="p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-slate-600 text-xs">
+                        Pengajuan akan berstatus <strong>Menunggu</strong> hingga diverifikasi oleh Petugas Teller. Setelah <strong>disetujui</strong>, nominal langsung ditambahkan ke saldo simpanan sesuai Jenis Setoran yang Anda pilih di bawah ini.
+                    </div>
+
+                    <form id="form-savings-deposit-request" onsubmit="saveSavingsDepositRequest(event)" class="space-y-3 text-xs">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Jenis Setoran</label>
+                            <select id="msd-select-type" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="sukarela">Simpanan Sukarela</option>
+                                <option value="wajib">Simpanan Wajib</option>
+                                <option value="pokok">Simpanan Pokok</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Nominal Transfer (Rp)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 font-semibold text-slate-400">Rp</span>
+                                <input type="number" id="msd-input-amount" min="1" step="1" required placeholder="Contoh: 500000" class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Catatan / Referensi Transfer</label>
+                            <input type="text" id="msd-input-note" placeholder="Contoh: Transfer BCA 14/09 - No. Ref 123456" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Bukti Transfer</label>
+                            <div id="msd-proof-preview-wrap" class="hidden mb-2">
+                                <img id="msd-proof-preview-img" src="" alt="Bukti Transfer" class="h-24 rounded-lg border border-slate-200 object-cover">
+                            </div>
+                            <input type="file" id="msd-input-proof" accept="image/png,image/jpeg,image/webp" required onchange="handleSavingsDepositProofFileChange(this)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none text-[11px] file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:bg-brand-50 file:text-brand-700 file:text-[11px] file:font-semibold">
+                            <p class="text-[10px] text-slate-400 mt-1">Unggah screenshot/foto bukti transfer (JPG/PNG/WEBP, maksimal 2MB) agar dapat diperiksa Petugas Teller.</p>
+                        </div>
+
+                        <div id="msd-form-error" class="hidden p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                            <i class="fa-solid fa-circle-exclamation mr-1"></i> <span id="msd-form-error-text"></span>
+                        </div>
+
+                        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-xs shadow transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i> Ajukan Setoran
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Riwayat Pengajuan -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden lg:col-span-2">
+                    <div class="p-4 bg-slate-50 border-b border-slate-200">
+                        <span class="font-bold text-xs uppercase text-slate-700 tracking-wider">Riwayat Pengajuan Setoran Transfer Bank</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600">
+                            <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                                <tr>
+                                    <th class="py-2.5 px-3">Tanggal</th>
+                                    <th class="py-2.5 px-3">Jenis Setoran</th>
+                                    <th class="py-2.5 px-3 text-right">Nominal</th>
+                                    <th class="py-2.5 px-3">Catatan</th>
+                                    <th class="py-2.5 px-3 text-center">Bukti</th>
+                                    <th class="py-2.5 px-3 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mp-savings-deposit-req-body" class="divide-y divide-slate-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </section>
 
         <!-- VIEW: PROFIL SAYA (ANGGOTA) -->
+
         <section id="view-member-profil" class="hidden space-y-6">
             <!-- MEMBER SUBTAB 7: PROFIL SAYA -->
             <div id="msec-profil" class="space-y-6">
@@ -1190,6 +1278,15 @@
                                     <span>Total Angsuran / Bulan:</span>
                                     <span id="sim-total" class="font-mono text-sm text-brand-700">Rp 0</span>
                                 </div>
+                                <div class="flex justify-between items-center text-xs pt-2 border-t border-dashed border-slate-200">
+                                    <span class="text-slate-600">Biaya Provisi (<span id="sim-provisi-rate">1</span>%):</span>
+                                    <span id="sim-provisi" class="font-mono font-semibold text-rose-600">Rp 0</span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs font-bold text-emerald-700">
+                                    <span>Dana Diterima (Bersih):</span>
+                                    <span id="sim-dana-diterima" class="font-mono text-sm">Rp 0</span>
+                                </div>
+                                <p class="text-[10px] text-slate-400 italic pt-1">*Biaya provisi <span id="sim-provisi-rate-note">1</span>% dari plafon pinjaman dipotong langsung dari dana yang dicairkan saat pinjaman disetujui.</p>
                             </div>
 
                             <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-xs shadow transition flex items-center justify-center gap-2">
@@ -1263,6 +1360,9 @@
                                 </div>
                                 <div id="mp-pay-transfer-info" class="hidden p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-slate-600">
                                     Transfer sejumlah nominal pembayaran ke rekening bank koperasi, lalu catat pembayaran di form ini. Petugas teller akan memverifikasi mutasi bank.
+                                    <div id="mp-pay-bank-accounts-info" class="mt-2">
+                                        <!-- Populated dynamically by renderCoopBankAccountsInfo() -->
+                                    </div>
                                 </div>
 
                                 <div>
@@ -1273,10 +1373,43 @@
                                     </div>
                                 </div>
 
+                                <div id="mp-pay-proof-wrap" class="hidden">
+                                    <label class="block font-semibold text-slate-700 mb-1">Bukti Transfer</label>
+                                    <div id="mp-pay-proof-preview-wrap" class="hidden mb-2">
+                                        <img id="mp-pay-proof-preview-img" src="" alt="Bukti Transfer" class="h-24 rounded-lg border border-slate-200 object-cover">
+                                    </div>
+                                    <input type="file" id="mp-pay-input-proof" accept="image/png,image/jpeg,image/webp" onchange="handleLoanPaymentProofFileChange(this)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none text-[11px] file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:bg-brand-50 file:text-brand-700 file:text-[11px] file:font-semibold">
+                                    <p class="text-[10px] text-slate-400 mt-1">Unggah screenshot/foto bukti transfer (JPG/PNG/WEBP, maksimal 2MB) agar dapat diperiksa Petugas Teller sebelum pembayaran disetujui.</p>
+                                </div>
+
                                 <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-xs shadow transition flex items-center justify-center gap-2">
                                     <i class="fa-solid fa-paper-plane"></i> Bayar Angsuran Sekarang
                                 </button>
                             </form>
+                        </div>
+
+                        <!-- Riwayat Pengajuan Pembayaran Angsuran via Transfer Bank -->
+                        <div id="mp-loan-payment-req-wrap" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="p-4 bg-slate-50 border-b border-slate-200">
+                                <span class="font-bold text-xs uppercase text-slate-700 tracking-wider">Riwayat Pengajuan Pembayaran via Transfer Bank</span>
+                                <p class="text-[11px] text-slate-400 mt-1 normal-case">Berstatus Menunggu hingga Petugas Teller memverifikasi bukti transfer dan menyetujuinya.</p>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs text-slate-600">
+                                    <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                                        <tr>
+                                            <th class="py-2.5 px-3">Tanggal</th>
+                                            <th class="py-2.5 px-3">Kode Pinjaman</th>
+                                            <th class="py-2.5 px-3 text-right">Nominal</th>
+                                            <th class="py-2.5 px-3 text-center">Bukti</th>
+                                            <th class="py-2.5 px-3 text-center">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="mp-loan-payment-req-body" class="divide-y divide-slate-100">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <!-- Table Rekap Mutasi Pembayaran Pinjaman -->
@@ -1334,11 +1467,30 @@
                         </div>
 
                         <form id="form-submit-transfer" onsubmit="handleTransfer(event)" class="space-y-4 text-xs">
-                            <div>
-                                <label class="block font-semibold text-slate-700 mb-1">Pilih Anggota Penerima</label>
-                                <select id="transfer-recipient" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                                    <!-- Populated dynamically with other members -->
-                                </select>
+                            <div class="relative">
+                                <label class="block font-semibold text-slate-700 mb-1">Cari Anggota Penerima</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-[11px]"></i>
+                                    <input type="text" id="transfer-recipient-search" autocomplete="off" placeholder="Ketik nama atau no. rekening anggota..." class="w-full pl-8 pr-8 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                    <button type="button" id="transfer-recipient-clear" onclick="clearTransferRecipient()" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600">
+                                        <i class="fa-solid fa-circle-xmark text-[11px]"></i>
+                                    </button>
+                                </div>
+                                <!-- Hidden field holding the actual selected recipient member id -->
+                                <input type="hidden" id="transfer-recipient" required>
+
+                                <!-- Search results dropdown -->
+                                <div id="transfer-recipient-results" class="hidden absolute z-20 mt-1 w-full max-h-52 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg divide-y divide-slate-100">
+                                    <!-- Populated dynamically -->
+                                </div>
+
+                                <!-- Selected recipient chip -->
+                                <div id="transfer-recipient-selected" class="hidden mt-2 p-2.5 bg-brand-50 border border-brand-200 rounded-lg flex items-center justify-between gap-2">
+                                    <div class="min-w-0">
+                                        <span id="transfer-recipient-selected-name" class="block font-semibold text-slate-800 truncate"></span>
+                                        <span id="transfer-recipient-selected-meta" class="block text-[11px] text-slate-500 truncate"></span>
+                                    </div>
+                                </div>
                             </div>
 
                             <div>
@@ -1791,12 +1943,14 @@
                 <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                 <h3 class="font-bold text-slate-800 text-sm mb-1 flex items-center gap-2"><i class="fa-solid fa-circle-plus text-brand-600"></i> Tambah Produk Pinjaman</h3>
                 <p class="text-xs text-slate-500 mb-4">Produk baru dapat dipakai anggota setelah diaktifkan.</p>
-                <form id="form-add-loan-product" onsubmit="addLoanProduct(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end text-xs">
+                <form id="form-add-loan-product" onsubmit="addLoanProduct(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end text-xs">
                     <div class="lg:col-span-2"><label class="block font-semibold text-slate-700 mb-1">Nama Produk</label><input type="text" id="lp-new-name" required placeholder="Contoh: Pinjaman Modal Usaha" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"></div>
                     <div><label class="block font-semibold text-slate-700 mb-1">Minimal (Rp)</label><input type="number" id="lp-new-min" min="0" required placeholder="500000" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"></div>
                     <div><label class="block font-semibold text-slate-700 mb-1">Maksimal (Rp)</label><input type="number" id="lp-new-max" min="0" placeholder="Tanpa batas" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"></div>
+                    <div><label class="block font-semibold text-slate-700 mb-1">Biaya Provisi (%)</label><input type="number" id="lp-new-provisi" min="0" max="100" step="0.1" value="1.0" required placeholder="1.0" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"></div>
                     <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-xs shadow transition"><i class="fa-solid fa-plus mr-1"></i> Tambahkan</button>
                 </form>
+                <p class="text-[10px] text-slate-400 mt-2">*Biaya provisi dipotong langsung dari dana yang dicairkan ke anggota saat pinjaman disetujui, dan dapat diubah lagi kapan saja per produk setelah ditambahkan.</p>
                 <div id="lp-new-error" class="hidden mt-3 p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium"></div>
                 </div>
             </div>
@@ -2831,6 +2985,11 @@
                 </button>
             </div>
 
+            <!-- Referensi Rekening Bank Koperasi (untuk verifikasi setoran via transfer) -->
+            <div id="tl-bank-accounts-info">
+                <!-- Populated dynamically by renderCoopBankAccountsInfo() -->
+            </div>
+
             <!-- Kas Teller Card -->
             <div id="tl-kas-card" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                 <!-- Populated dynamically by renderTellerKasCard() -->
@@ -2905,6 +3064,59 @@
                                     </tr>
                                 </thead>
                                 <tbody id="tl-today-log-body" class="divide-y divide-slate-100">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Verifikasi Setoran Simpanan via Transfer Bank -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 bg-slate-50 border-b border-slate-200">
+                            <span class="font-bold text-xs uppercase text-slate-700 tracking-wider">Verifikasi Setoran Simpanan via Transfer Bank</span>
+                            <p class="text-[11px] text-slate-400 mt-1 normal-case">Pengajuan setoran dari Portal Anggota. Setujui setelah memastikan dana benar-benar sudah masuk ke rekening bank koperasi — saldo anggota akan langsung bertambah sesuai jenis setoran yang dipilihnya.</p>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-600">
+                                <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                                    <tr>
+                                        <th class="py-2.5 px-3">Tanggal</th>
+                                        <th class="py-2.5 px-3">Anggota</th>
+                                        <th class="py-2.5 px-3">Jenis Setoran</th>
+                                        <th class="py-2.5 px-3 text-right">Nominal</th>
+                                        <th class="py-2.5 px-3">Catatan</th>
+                                        <th class="py-2.5 px-3 text-center">Bukti</th>
+                                        <th class="py-2.5 px-3 text-center">Status</th>
+                                        <th class="py-2.5 px-3 text-center no-print">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tl-savings-deposit-req-body" class="divide-y divide-slate-100">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Verifikasi Pembayaran Angsuran Pinjaman via Transfer Bank -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 bg-slate-50 border-b border-slate-200">
+                            <span class="font-bold text-xs uppercase text-slate-700 tracking-wider">Verifikasi Pembayaran Angsuran Pinjaman via Transfer Bank</span>
+                            <p class="text-[11px] text-slate-400 mt-1 normal-case">Pengajuan pembayaran angsuran dari Portal Anggota. Setujui setelah memastikan dana benar-benar sudah masuk ke rekening bank koperasi — sisa pinjaman anggota akan langsung berkurang.</p>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-600">
+                                <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                                    <tr>
+                                        <th class="py-2.5 px-3">Tanggal</th>
+                                        <th class="py-2.5 px-3">Anggota</th>
+                                        <th class="py-2.5 px-3">Kode Pinjaman</th>
+                                        <th class="py-2.5 px-3 text-right">Nominal</th>
+                                        <th class="py-2.5 px-3 text-center">Bukti</th>
+                                        <th class="py-2.5 px-3 text-center">Status</th>
+                                        <th class="py-2.5 px-3 text-center no-print">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tl-loan-payment-req-body" class="divide-y divide-slate-100">
                                     <!-- Populated dynamically -->
                                 </tbody>
                             </table>
@@ -3003,6 +3215,7 @@
                                 <th class="py-2.5 px-3 text-right">Saldo Akhir (Sistem)</th>
                                 <th class="py-2.5 px-3 text-right">Saldo Akhir (Fisik)</th>
                                 <th class="py-2.5 px-3 text-right">Selisih</th>
+                                <th class="py-2.5 px-3 text-right">Transfer Bank (Non-Tunai)</th>
                                 <th class="py-2.5 px-3 text-center">Status</th>
                             </tr>
                         </thead>
@@ -3091,11 +3304,94 @@
             </div>
         </section>
 
+        <!-- VIEW: REKENING BANK KOPERASI (Admin) -->
+        <section id="view-rekening-bank" class="hidden space-y-6">
+            <div>
+                <h2 class="text-xl font-bold text-slate-800">Rekening Bank Koperasi</h2>
+                <p class="text-sm text-slate-500">Kelola daftar rekening bank resmi koperasi untuk menerima transfer dana. Informasi ini otomatis tampil sebagai referensi di Portal Anggota, Loket Teller, Manajemen Mitra, dan Manajemen Kreditur/Investor.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Form Tambah/Edit Rekening -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-fit lg:col-span-1">
+                    <h3 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><i class="fa-solid fa-building-columns text-brand-600"></i> <span id="rbk-form-title">Tambah Rekening Bank</span></h3>
+                    <form id="form-rekening-bank" onsubmit="saveCoopBankAccount(event)" class="space-y-3 text-xs">
+                        <input type="hidden" id="rbk-input-id" value="">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Nama Bank</label>
+                            <input type="text" id="rbk-input-bank-name" required placeholder="Contoh: Bank BRI" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Nomor Rekening</label>
+                            <input type="text" id="rbk-input-account-number" required placeholder="Contoh: 0123-01-004567-50-1" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">A/N (Atas Nama Pemilik Rekening)</label>
+                            <input type="text" id="rbk-input-account-holder" required placeholder="Contoh: Koperasi Mitra Usaha Sejahtera" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Catatan (opsional)</label>
+                            <input type="text" id="rbk-input-note" placeholder="Contoh: Khusus setoran simpanan anggota" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+
+                        <div id="rbk-form-error" class="hidden p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                            <i class="fa-solid fa-circle-exclamation mr-1"></i> <span id="rbk-form-error-text"></span>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button type="submit" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-xs shadow transition">
+                                <i class="fa-solid fa-floppy-disk mr-1"></i> <span id="rbk-submit-label">Simpan Rekening</span>
+                            </button>
+                            <button type="button" id="rbk-cancel-edit-btn" onclick="cancelEditCoopBankAccount()" class="hidden px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2.5 rounded-lg text-xs transition">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Daftar Rekening -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                            <span class="font-bold text-xs uppercase text-slate-700 tracking-wider">Daftar Rekening Bank Koperasi</span>
+                            <span class="text-xs text-slate-500" id="rbk-total-label">0 Rekening</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-600">
+                                <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                                    <tr>
+                                        <th class="py-2.5 px-3">Nama Bank</th>
+                                        <th class="py-2.5 px-3">Nomor Rekening</th>
+                                        <th class="py-2.5 px-3">A/N</th>
+                                        <th class="py-2.5 px-3">Catatan</th>
+                                        <th class="py-2.5 px-3 text-center">Status</th>
+                                        <th class="py-2.5 px-3 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rbk-list-body" class="divide-y divide-slate-100">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs font-medium flex items-start gap-2">
+                        <i class="fa-solid fa-circle-info mt-0.5"></i>
+                        <span>Hanya rekening berstatus <strong>Aktif</strong> yang akan ditampilkan sebagai referensi transfer kepada anggota, teller, mitra, dan kreditur/investor. Nonaktifkan rekening yang sudah tidak dipakai alih-alih menghapusnya agar riwayat tetap tercatat.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- VIEW: MANAJEMEN MITRA (Admin) -->
         <section id="view-mitra" class="hidden space-y-6">
             <div>
                 <h2 class="text-xl font-bold text-slate-800">Manajemen Mitra</h2>
                 <p class="text-sm text-slate-500">Kelola akun Mitra/agen, saldo (float) mereka, serta transaksi Mitra ke Koperasi dan Mitra ke Anggota.</p>
+            </div>
+
+            <!-- Referensi Rekening Bank Koperasi (untuk Deposit Saldo Mitra via transfer) -->
+            <div id="mitra-bank-accounts-info">
+                <!-- Populated dynamically by renderCoopBankAccountsInfo() -->
             </div>
 
             <!-- Ringkasan Mitra -->
@@ -3621,6 +3917,7 @@
                         <label class="block text-xs font-medium text-slate-700 mb-1">Target Minimal Partisipasi Usaha (Rp)</label>
                         <input type="number" id="input-shu-target-partisipasi" value="0" min="0" onchange="calculateSHUDistribution()" onkeyup="calculateSHUDistribution()" class="w-full px-3 py-2 border border-slate-300 rounded-lg font-semibold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
                         <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed"><i class="fa-solid fa-circle-info mr-1"></i>Anggota dengan partisipasi usaha di bawah target ini <span class="font-semibold text-rose-600">tidak berhak menerima SHU</span> pada tahun buku berjalan. Kosongkan/isi 0 jika tidak ada syarat minimal.</p>
+                        <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed"><i class="fa-solid fa-circle-info mr-1"></i>Partisipasi Usaha anggota dihitung otomatis dari: estimasi bunga pinjaman anggota, <span class="font-semibold">ditambah seluruh nominal transaksi Anggota ke Mitra</span> (Setor Tunai, Tarik Tunai, dan Belanja ke Mitra — baik yang diproses mandiri oleh anggota/Mitra maupun oleh Admin).</p>
                     </div>
 
                     <h3 class="font-bold text-slate-800 border-b border-slate-200 pb-2 pt-2">3. Persentase Alokasi RAT (%)</h3>
@@ -3862,6 +4159,11 @@
                     <h2 class="text-xl font-bold text-slate-800">Kreditur/Investor</h2>
                     <p class="text-sm text-slate-500">Kelola data pihak eksternal (bukan anggota) yang memberikan pinjaman (Kreditur) atau menanamkan modal (Investor) kepada koperasi, beserta nilai dana, bunga/bagi hasil, dan jangka waktunya.</p>
                 </div>
+            </div>
+
+            <!-- Referensi Rekening Bank Koperasi (untuk pencairan dana dari Kreditur/Investor) -->
+            <div id="ki-bank-accounts-info">
+                <!-- Populated dynamically by renderCoopBankAccountsInfo() -->
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -4145,6 +4447,41 @@
         let transactionSeq = 1;
         let pendingKtpBase64 = null;
 
+        // Pengajuan Setoran Simpanan via Transfer Bank oleh Anggota (Portal Anggota):
+        // anggota mentransfer dana ke rekening bank koperasi terlebih dahulu, lalu
+        // mengajukan pencatatan setoran ini berstatus "pending" (Menunggu). Setelah
+        // diverifikasi & disetujui oleh Petugas Teller (approveSavingsDepositRequest),
+        // nominal langsung ditambahkan ke saldo simpanan anggota sesuai Jenis Setoran
+        // yang dipilih anggota (pokok/wajib/sukarela) dan tercatat sebagai mutasi debit
+        // pada Buku Tabungan miliknya (savingsMutations) serta buku besar/COA koperasi.
+        // { id, memberId, memberName, accountNumber, type: 'pokok'|'wajib'|'sukarela',
+        //   amount, note, status: 'pending'|'approved'|'rejected', date, time,
+        //   processedBy, processedAt }
+        let savingsDepositRequests = [];
+        let savingsDepositReqSeq = 1;
+
+        // Pengajuan Pembayaran Angsuran Pinjaman via Transfer Bank oleh Anggota (Portal
+        // Anggota): anggota mentransfer dana ke rekening bank koperasi terlebih dahulu,
+        // mengunggah bukti transfer, lalu mengajukan pencatatan pembayaran ini berstatus
+        // "pending" (Menunggu). Sisa pinjaman TIDAK langsung berkurang di sini — hanya
+        // setelah diverifikasi & disetujui oleh Petugas Teller (approveLoanPaymentRequest)
+        // barulah pembayaran diposting ke buku pinjaman & buku besar/COA koperasi.
+        // { id, loanId, memberId, memberName, amount, proofFile,
+        //   status: 'pending'|'approved'|'rejected', date, time, processedBy, processedAt }
+        let loanPaymentRequests = [];
+        let loanPaymentReqSeq = 1;
+
+        // Rekening Bank Koperasi: daftar rekening bank resmi milik koperasi untuk
+        // menerima transfer dana (setoran anggota, pembayaran angsuran, dana dari
+        // Mitra, Kreditur/Investor, dll). Dikelola Admin lewat menu "Rekening Bank
+        // Koperasi", lalu ditampilkan sebagai info read-only di berbagai halaman
+        // (Portal Anggota, Loket Teller, Manajemen Mitra, Manajemen Kreditur/Investor)
+        // agar siapa pun yang perlu mentransfer dana ke koperasi tahu rekening tujuan
+        // yang benar.
+        // { id, bankName, accountNumber, accountHolder, note, isActive }
+        let coopBankAccounts = [];
+        let coopBankAccountSeq = 1;
+
         // Savings Products Configuration (Produk Simpanan)
         // type: 'pokok' | 'wajib' | 'sukarela' | 'custom'
         // hasMax: whether this product supports a "Maksimal/Bulan" setting
@@ -4166,10 +4503,18 @@
         // Variabel ini disimpan sebagai referensi/cadangan bawaan aplikasi.
         const DEFAULT_SAVINGS_PRODUCTS = JSON.parse(JSON.stringify(savingsProducts));
 
+        // Biaya provisi/admin pembuatan pinjaman kini diatur PER PRODUK PINJAMAN
+        // melalui field loanProducts[].provisionRate (lihat Manajemen Produk
+        // Pinjaman > Biaya Provisi). Konstanta di bawah ini hanya dipakai sebagai
+        // nilai bawaan/fallback (mis. untuk data lama yang belum punya
+        // provisionRate). Biaya dipotong langsung saat dana dicairkan (lihat
+        // approveLoan) dan dibukukan sebagai pendapatan pada akun 4-1200.
+        const LOAN_PROVISION_RATE = 1.0; // persen dari jumlah pinjaman (default/fallback)
+
         // Loan Applications List
         let loanApplications = [];
         let loanProducts = [
-            { id: 'pjs-ku', name: 'Produk Pinjaman Jaminan Simpanan (PJS-KU)', code: 'PJS-KU', min: 500000, max: 50000000, maxApprovalPercentage: 100, serviceRate: 1.0, collateralType: 'simpanan', active: true, isDefault: true, desc: 'Pinjaman dijamin dengan penguncian simpanan sebesar pinjaman yang disetujui.' }
+            { id: 'pjs-ku', name: 'Produk Pinjaman Jaminan Simpanan (PJS-KU)', code: 'PJS-KU', min: 500000, max: 50000000, maxApprovalPercentage: 100, serviceRate: 1.0, provisionRate: 1.0, collateralType: 'simpanan', active: true, isDefault: true, desc: 'Pinjaman dijamin dengan penguncian simpanan sebesar pinjaman yang disetujui.' }
         ];
         let loanProductSeq = 1;
         const DEFAULT_LOAN_PRODUCTS = JSON.parse(JSON.stringify(loanProducts));
@@ -4348,6 +4693,7 @@
             { id: 'produk-pinjaman', label: 'Produk Pinjaman', icon: 'fa-hand-holding-dollar' },
             { id: 'transaksi', label: 'Transaksi Keuangan', icon: 'fa-money-bill-transfer' },
             { id: 'petugas-teller', label: 'Petugas Teller', icon: 'fa-user-tie' },
+            { id: 'rekening-bank', label: 'Rekening Bank Koperasi', icon: 'fa-building-columns' },
             { id: 'mitra', label: 'Mitra', icon: 'fa-handshake' },
             { id: 'laporan', label: 'Laporan Keuangan', icon: 'fa-file-invoice-dollar' },
             { id: 'shu', label: 'SHU', icon: 'fa-coins' },
@@ -4548,6 +4894,12 @@
             return {
                 members,
                 savingsMutations,
+                savingsDepositRequests,
+                savingsDepositReqSeq,
+                loanPaymentRequests,
+                loanPaymentReqSeq,
+                coopBankAccounts,
+                coopBankAccountSeq,
                 savingsProducts,
                 loanApplications,
                 loanProducts,
@@ -4602,12 +4954,19 @@
             const asArray = value => Array.isArray(value) ? value : (value && typeof value === 'object' ? Object.values(value) : []);
             members = asArray(data.members);
             savingsMutations = asArray(data.savingsMutations);
+            savingsDepositRequests = asArray(data.savingsDepositRequests);
+            savingsDepositReqSeq = data.savingsDepositReqSeq || 1;
+            loanPaymentRequests = asArray(data.loanPaymentRequests);
+            loanPaymentReqSeq = data.loanPaymentReqSeq || 1;
+            coopBankAccounts = asArray(data.coopBankAccounts);
+            coopBankAccountSeq = data.coopBankAccountSeq || 1;
             savingsProducts = asArray(data.savingsProducts).length ? asArray(data.savingsProducts) : savingsProducts;
             loanApplications = asArray(data.loanApplications);
             loanProducts = asArray(data.loanProducts).length ? asArray(data.loanProducts) : JSON.parse(JSON.stringify(DEFAULT_LOAN_PRODUCTS));
             loanProducts.forEach(p => { if (p.active === undefined) p.active = true; });
             loanProducts.forEach(p => { if (p.maxApprovalPercentage === undefined) p.maxApprovalPercentage = 100; });
             loanProducts.forEach(p => { if (p.serviceRate === undefined) p.serviceRate = 1.0; });
+            loanProducts.forEach(p => { if (p.provisionRate === undefined) p.provisionRate = LOAN_PROVISION_RATE; });
             loanProductSeq = data.loanProductSeq || loanProductSeq;
             loanPayments = asArray(data.loanPayments);
             loanPaymentSeq = data.loanPaymentSeq || loanPaymentSeq;
@@ -4796,6 +5155,12 @@
         // ==========================================
         function formatRupiah(number) {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number || 0);
+        }
+
+        // Mengembalikan jam saat ini dalam format HH:mm (WIB/waktu lokal perangkat),
+        // dipakai untuk mencatat jam transaksi pada mutasi buku tabungan.
+        function getCurrentTimeStr() {
+            return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
         }
 
         function getSavingsMutationCoa(mutation) {
@@ -5150,7 +5515,7 @@
             // Penjaga akses: cegah user berpindah ke tab admin-only yang tidak
             // menjadi haknya (mis. dipanggil manual lewat console), meskipun tombolnya
             // sudah disembunyikan oleh updateUserHeader().
-            const ADMIN_ONLY_TABS = ['keanggotaan', 'pengurus', 'produk-simpanan', 'produk-pinjaman', 'transaksi', 'petugas-teller', 'mitra', 'unit-bisnis', 'laporan', 'shu', 'kso', 'kreditur-investor', 'pajak', 'manajemen-data'];
+            const ADMIN_ONLY_TABS = ['keanggotaan', 'pengurus', 'produk-simpanan', 'produk-pinjaman', 'transaksi', 'petugas-teller', 'rekening-bank', 'mitra', 'unit-bisnis', 'laporan', 'shu', 'kso', 'kreditur-investor', 'pajak', 'manajemen-data'];
             // Pengecualian tab "pengurus": Pengurus (bukan admin/Ketua & belum tentu
             // punya modul "pengurus") tetap boleh membuka tab ini karena di dalamnya
             // memuat sub menu "Akses Pengurus" untuk mengelola/mengajukan akses miliknya
@@ -5160,7 +5525,7 @@
                 tabId = (currentUser && currentUser.role === 'member') ? 'member-ringkasan' : 'dashboard';
             }
 
-            const tabs = ['dashboard', 'member-ringkasan', 'member-tabungan', 'member-profil', 'member-mitra', 'member-transaksi', 'keanggotaan', 'pengurus', 'produk-simpanan', 'produk-pinjaman', 'transaksi', 'teller', 'petugas-teller', 'mitra', 'unit-bisnis', 'admin-pinjaman', 'laporan', 'shu', 'kso', 'kreditur-investor', 'pajak', 'manajemen-data'];
+            const tabs = ['dashboard', 'member-ringkasan', 'member-tabungan', 'member-profil', 'member-mitra', 'member-transaksi', 'keanggotaan', 'pengurus', 'produk-simpanan', 'produk-pinjaman', 'transaksi', 'teller', 'petugas-teller', 'rekening-bank', 'mitra', 'unit-bisnis', 'admin-pinjaman', 'laporan', 'shu', 'kso', 'kreditur-investor', 'pajak', 'manajemen-data'];
             tabs.forEach(t => {
                 const view = document.getElementById(`view-${t}`);
                 const btn = document.getElementById(`tab-${t}`);
@@ -5190,6 +5555,7 @@
             if (tabId === 'transaksi') renderTransactionsView();
             if (tabId === 'teller') renderTellerView();
             if (tabId === 'petugas-teller') renderPetugasTellerView();
+            if (tabId === 'rekening-bank') renderCoopBankAccountsAdmin();
             if (tabId === 'mitra') { switchMitraSubtab('data'); }
             if (tabId === 'unit-bisnis') renderUnitBisnisView();
             if (tabId === 'laporan') renderFinancialReports();
@@ -5646,11 +6012,11 @@
             members.push(newMember);
 
             if (pokok > 0) {
-                savingsMutations.push({ memberId: newId, date: today, desc: 'Setoran Simpanan Pokok (Awal)', debit: pokok, credit: 0 });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId: newId, date: today, desc: 'Setoran Simpanan Pokok (Awal)', debit: pokok, credit: 0 });
                 postAutoTransaction('pemasukan', '3-1100', pokok, `Setoran Simpanan Pokok (Awal) - ${name} (${newId})`, today);
             }
             if (wajib > 0) {
-                savingsMutations.push({ memberId: newId, date: today, desc: 'Setoran Simpanan Wajib (Awal)', debit: wajib, credit: 0 });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId: newId, date: today, desc: 'Setoran Simpanan Wajib (Awal)', debit: wajib, credit: 0 });
                 postAutoTransaction('pemasukan', '3-1200', wajib, `Setoran Simpanan Wajib (Awal) - ${name} (${newId})`, today);
             }
 
@@ -5821,11 +6187,11 @@
             const today = new Date().toISOString().split('T')[0];
             if (type === 'setor') {
                 member.simpananSukarela += amount;
-                savingsMutations.push({ memberId, date: today, desc, debit: amount, credit: 0 });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc, debit: amount, credit: 0 });
                 postAutoTransaction('pemasukan', '2-1100', amount, `${desc} - ${member.name} (${member.id})`, today);
             } else {
                 member.simpananSukarela -= amount;
-                savingsMutations.push({ memberId, date: today, desc, debit: 0, credit: amount });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc, debit: 0, credit: amount });
                 postAutoTransaction('pengeluaran', '2-1100', amount, `${desc} - ${member.name} (${member.id})`, today);
             }
 
@@ -5909,15 +6275,15 @@
 
             const today = new Date().toISOString().split('T')[0];
             if (totalPokok > 0) {
-                savingsMutations.push({ memberId, date: today, desc: 'Pencairan Simpanan Pokok - Pengunduran Diri Anggota', debit: 0, credit: totalPokok });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc: 'Pencairan Simpanan Pokok - Pengunduran Diri Anggota', debit: 0, credit: totalPokok });
                 postAutoTransaction('pengeluaran', '3-1100', totalPokok, `Pencairan Simpanan Pokok - Pengunduran Diri ${member.name} (${member.id})`, today);
             }
             if (totalWajib > 0) {
-                savingsMutations.push({ memberId, date: today, desc: 'Pencairan Simpanan Wajib - Pengunduran Diri Anggota', debit: 0, credit: totalWajib });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc: 'Pencairan Simpanan Wajib - Pengunduran Diri Anggota', debit: 0, credit: totalWajib });
                 postAutoTransaction('pengeluaran', '3-1200', totalWajib, `Pencairan Simpanan Wajib - Pengunduran Diri ${member.name} (${member.id})`, today);
             }
             if (totalSukarela > 0) {
-                savingsMutations.push({ memberId, date: today, desc: 'Pencairan Simpanan Sukarela - Pengunduran Diri Anggota', debit: 0, credit: totalSukarela });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc: 'Pencairan Simpanan Sukarela - Pengunduran Diri Anggota', debit: 0, credit: totalSukarela });
                 postAutoTransaction('pengeluaran', '2-1100', totalSukarela, `Pencairan Simpanan Sukarela - Pengunduran Diri ${member.name} (${member.id})`, today);
             }
 
@@ -5950,7 +6316,11 @@
             document.getElementById(`mtxsubtab-${mSubId}`).classList.add('active');
 
             if (mSubId === 'pinjaman') { calculateLoanSimulation(); renderMemberLoanPaymentForm(); renderMemberLoanPaymentsRecap(); }
-            if (mSubId === 'transfer') populateTransferRecipients();
+            if (mSubId === 'transfer') {
+                const mbTrf = members.find(m => m.id === currentUser.memberId);
+                if (mbTrf) document.getElementById('trf-source-balance').innerText = formatRupiah(mbTrf.simpananSukarela);
+                populateTransferRecipients();
+            }
             if (mSubId === 'belanja') { populateMemberBelanjaMitraSelect(); renderMemberBelanjaMitraHistory(); }
         }
 
@@ -6409,7 +6779,7 @@
             const history = savingsMutations.filter(mu => mu.memberId === member.id);
 
             if (history.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Belum ada mutasi tabungan.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">Belum ada mutasi tabungan.</td></tr>`;
                 return;
             }
 
@@ -6420,6 +6790,7 @@
                 return `
                     <tr class="hover:bg-slate-50">
                         <td class="py-2.5 px-3 font-medium">${h.date}</td>
+                        <td class="py-2.5 px-3 font-mono text-slate-500">${h.time || '-'}</td>
                         <td class="py-2.5 px-3 text-slate-600">${h.desc}</td>
                         <td class="py-2.5 px-3"><span class="font-mono text-[11px] text-brand-800">${coa.code}</span><br><span class="text-[10px] text-slate-400">${coa.name}</span></td>
                         <td class="py-2.5 px-3 text-right font-mono text-emerald-700">${h.debit > 0 ? formatRupiah(h.debit) : '-'}</td>
@@ -6428,6 +6799,155 @@
                     </tr>
                 `;
             }).join('');
+
+            renderMemberSavingsDepositRequests();
+            renderCoopBankAccountsInfo('msd-bank-accounts-info');
+        }
+
+        // Anggota mengajukan pencatatan Setoran Simpanan via Transfer Bank: anggota sudah
+        // mentransfer dana ke rekening bank koperasi secara mandiri, lalu mengisi form ini
+        // (Jenis Setoran, Nominal, Catatan/referensi transfer, Bukti Transfer) untuk
+        // diverifikasi Petugas Teller. Saldo TIDAK langsung bertambah di sini — hanya
+        // tersimpan berstatus "Menunggu" (pending) sampai disetujui lewat
+        // approveSavingsDepositRequest().
+        function generateSavingsDepositReqId() {
+            const id = `STB-${String(savingsDepositReqSeq).padStart(4, '0')}`;
+            savingsDepositReqSeq++;
+            return id;
+        }
+
+        // Menyimpan sementara base64 foto/screenshot bukti transfer yang baru dipilih
+        // anggota, sebelum form pengajuan Setoran via Transfer Bank disubmit.
+        let pendingSavingsDepositProofBase64 = null;
+
+        function handleSavingsDepositProofFileChange(input) {
+            const file = input.files && input.files[0];
+            const previewWrap = document.getElementById('msd-proof-preview-wrap');
+            const previewImg = document.getElementById('msd-proof-preview-img');
+            const errorBox = document.getElementById('msd-form-error');
+            const errorText = document.getElementById('msd-form-error-text');
+
+            if (!file) {
+                pendingSavingsDepositProofBase64 = null;
+                previewWrap.classList.add('hidden');
+                previewImg.src = '';
+                return;
+            }
+
+            if (file.size > 2 * 1024 * 1024) {
+                errorText.innerText = 'Ukuran file bukti transfer maksimal 2MB. Silakan pilih file lain.';
+                errorBox.classList.remove('hidden');
+                input.value = '';
+                pendingSavingsDepositProofBase64 = null;
+                previewWrap.classList.add('hidden');
+                previewImg.src = '';
+                return;
+            }
+
+            errorBox.classList.add('hidden');
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                pendingSavingsDepositProofBase64 = ev.target.result;
+                previewImg.src = pendingSavingsDepositProofBase64;
+                previewWrap.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function saveSavingsDepositRequest(e) {
+            e.preventDefault();
+            if (!currentUser || currentUser.role !== 'member') return;
+            const member = members.find(m => m.id === currentUser.memberId);
+            const errorBox = document.getElementById('msd-form-error');
+            const errorText = document.getElementById('msd-form-error-text');
+            errorBox.classList.add('hidden');
+
+            if (!member) return;
+
+            const type = document.getElementById('msd-select-type').value;
+            const amount = parseFloat(document.getElementById('msd-input-amount').value);
+            const note = document.getElementById('msd-input-note').value.trim();
+
+            if (!amount || amount <= 0) {
+                errorText.innerText = 'Nominal setoran tidak valid.';
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            if (!pendingSavingsDepositProofBase64) {
+                errorText.innerText = 'Bukti transfer wajib diunggah agar dapat diperiksa Petugas Teller.';
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            const now = new Date();
+            const reqRecord = {
+                id: generateSavingsDepositReqId(),
+                memberId: member.id,
+                memberName: member.name,
+                accountNumber: member.accountNumber,
+                type,
+                amount,
+                note,
+                proofFile: pendingSavingsDepositProofBase64,
+                status: 'pending',
+                date: todayStr(),
+                time: now.toTimeString().slice(0, 5),
+                processedBy: null,
+                processedAt: null
+            };
+            savingsDepositRequests.unshift(reqRecord);
+
+            document.getElementById('form-savings-deposit-request').reset();
+            pendingSavingsDepositProofBase64 = null;
+            document.getElementById('msd-proof-preview-wrap').classList.add('hidden');
+            document.getElementById('msd-proof-preview-img').src = '';
+            renderMemberSavingsDepositRequests();
+            saveStateToFirebase();
+            showModal('Pengajuan Terkirim', `Pengajuan Setoran ${SAVINGS_DEPOSIT_TYPE_LABEL[type]} sebesar ${formatRupiah(amount)} berhasil dikirim dan berstatus Menunggu. Saldo akan otomatis bertambah setelah Petugas Teller memverifikasi bukti transfer Anda.`);
+        }
+
+        // Membuka bukti transfer (foto/screenshot) milik sebuah pengajuan Setoran via
+        // Transfer Bank di tab baru, dipakai baik oleh Anggota (riwayat pengajuannya
+        // sendiri) maupun Petugas Teller (antrean verifikasi).
+        function viewSavingsDepositProof(reqId) {
+            const req = savingsDepositRequests.find(r => r.id === reqId);
+            if (!req || !req.proofFile) return;
+            const w = window.open('');
+            w.document.write(`<title>Bukti Transfer - ${req.memberName}</title><body style="margin:0;background:#0f172a;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${req.proofFile}" style="max-width:100%;max-height:100%;"></body>`);
+        }
+
+        // Label jenis setoran dipakai bersama oleh form pengajuan anggota, tabel riwayat
+        // anggota, dan antrean verifikasi Petugas Teller.
+        const SAVINGS_DEPOSIT_TYPE_LABEL = { pokok: 'Simpanan Pokok', wajib: 'Simpanan Wajib', sukarela: 'Simpanan Sukarela' };
+
+        function renderMemberSavingsDepositRequests() {
+            if (!currentUser || currentUser.role !== 'member') return;
+            const tbody = document.getElementById('mp-savings-deposit-req-body');
+            if (!tbody) return;
+
+            const myReqs = savingsDepositRequests.filter(r => r.memberId === currentUser.memberId);
+            if (myReqs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Belum ada pengajuan setoran via transfer bank.</td></tr>`;
+                return;
+            }
+
+            const statusBadge = {
+                pending: `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">Menunggu</span>`,
+                approved: `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Disetujui</span>`,
+                rejected: `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">Ditolak</span>`
+            };
+            const sorted = [...myReqs].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+            tbody.innerHTML = sorted.map(r => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-2.5 px-3">${r.date} ${r.time}</td>
+                    <td class="py-2.5 px-3">${SAVINGS_DEPOSIT_TYPE_LABEL[r.type] || r.type}</td>
+                    <td class="py-2.5 px-3 text-right font-mono font-semibold">${formatRupiah(r.amount)}</td>
+                    <td class="py-2.5 px-3 text-slate-500">${r.note || '-'}</td>
+                    <td class="py-2.5 px-3 text-center">${r.proofFile ? `<button type="button" onclick="viewSavingsDepositProof('${r.id}')" class="text-brand-600 hover:text-brand-800" title="Lihat Bukti Transfer"><i class="fa-solid fa-image"></i></button>` : '-'}</td>
+                    <td class="py-2.5 px-3 text-center">${statusBadge[r.status] || r.status}</td>
+                </tr>
+            `).join('');
         }
 
         // Menampilkan panel Pengajuan Mitra pada Portal Anggota: status Mitra aktif, status
@@ -6780,7 +7300,7 @@
                 }
                 mitra.saldo = (mitra.saldo || 0) - netCredit + mitraShare;
                 targetMember.simpananSukarela += netCredit;
-                savingsMutations.push({ memberId: targetMember.id, date: today, desc: `${desc} (Mitra ${mitra.name})${fee > 0 ? ` - net setelah biaya admin ${formatRupiah(fee)}` : ''}`, debit: netCredit, credit: 0 });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId: targetMember.id, date: today, desc: `${desc} (Mitra ${mitra.name})${fee > 0 ? ` - net setelah biaya admin ${formatRupiah(fee)}` : ''}`, debit: netCredit, credit: 0 });
             } else if (type === 'tarik') {
                 const totalDebit = amount + fee;
                 if (totalDebit > getMemberAvailableSavings(targetMember)) {
@@ -6792,7 +7312,7 @@
                 // potongan dari Simpanan Sukarela di luar nominal yang diterima.
                 targetMember.simpananSukarela -= totalDebit;
                 mitra.saldo = (mitra.saldo || 0) + amount + mitraShare;
-                savingsMutations.push({ memberId: targetMember.id, date: today, desc: `${desc} (Mitra ${mitra.name})${fee > 0 ? ` - termasuk biaya admin ${formatRupiah(fee)}` : ''}`, debit: 0, credit: totalDebit });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId: targetMember.id, date: today, desc: `${desc} (Mitra ${mitra.name})${fee > 0 ? ` - termasuk biaya admin ${formatRupiah(fee)}` : ''}`, debit: 0, credit: totalDebit });
             } else {
                 return;
             }
@@ -6822,6 +7342,12 @@
                 time: now.toTimeString().slice(0, 5),
                 selfService: true
             });
+
+            // Aturan: seluruh transaksi Anggota ke Mitra (Setor/Tarik/Belanja) ikut
+            // dihitung sebagai Partisipasi Usaha Anggota untuk pembagian SHU kategori
+            // Jasa Usaha (Partisipasi). Yang dihitung adalah anggota yang DILAYANI
+            // (targetMember), bukan anggota pemilik akun Mitra.
+            targetMember.partisipasiUsaha = (targetMember.partisipasiUsaha || 0) + amount;
 
             document.getElementById('form-member-mitra-tx').reset();
             if (type === 'tarik') resetMemberMitraPinAuth();
@@ -6880,14 +7406,23 @@
             const amount = parseFloat(document.getElementById('loan-amount').value) || 0;
             const tenor = parseInt(document.getElementById('loan-tenor').value) || 12;
             const rate = parseFloat(document.getElementById('loan-interest-rate').value) || 1.0;
+            const productSelect = document.getElementById('loan-product');
+            const selectedProduct = productSelect ? loanProducts.find(p => p.id === productSelect.value) : null;
+            const provisionRate = selectedProduct && selectedProduct.provisionRate != null ? selectedProduct.provisionRate : LOAN_PROVISION_RATE;
 
             const pokokBln = amount / tenor;
             const bungaBln = amount * (rate / 100);
             const totalBln = pokokBln + bungaBln;
+            const provisiFee = amount * (provisionRate / 100);
+            const danaDiterima = amount - provisiFee;
 
             document.getElementById('sim-pokok').innerText = formatRupiah(pokokBln);
             document.getElementById('sim-bunga').innerText = formatRupiah(bungaBln);
             document.getElementById('sim-total').innerText = formatRupiah(totalBln);
+            document.getElementById('sim-provisi-rate').innerText = provisionRate;
+            document.getElementById('sim-provisi-rate-note').innerText = provisionRate;
+            document.getElementById('sim-provisi').innerText = '- ' + formatRupiah(provisiFee);
+            document.getElementById('sim-dana-diterima').innerText = formatRupiah(danaDiterima);
         }
 
         function getMemberAvailableSavings(member) {
@@ -6958,6 +7493,11 @@
             const pokokBln = amount / tenor;
             const bungaBln = amount * (interestRate / 100);
             const monthlyPayment = Math.round(pokokBln + bungaBln);
+            // Biaya provisi diatur per produk pinjaman (product.provisionRate),
+            // dipotong langsung dari dana yang dicairkan saat pinjaman disetujui
+            // (lihat approveLoan).
+            const provisionRate = product.provisionRate != null ? product.provisionRate : LOAN_PROVISION_RATE;
+            const provisionFee = Math.round(amount * (provisionRate / 100));
 
             const newLoan = {
                 id: 'LN-' + Math.floor(100 + Math.random() * 900),
@@ -6972,6 +7512,8 @@
                 productName: product.name,
                 outstandingAmount: amount,
                 collateralAmount: 0,
+                provisionRate: provisionRate,
+                provisionFee: provisionFee,
                 status: 'Pending',
                 date: new Date().toISOString().split('T')[0]
             };
@@ -6982,7 +7524,7 @@
             renderMemberLoansTable();
             updatePendingBadge();
             saveStateToFirebase();
-            showModal('Pengajuan Pinjaman Berhasil!', `Pengajuan pinjaman sebesar ${formatRupiah(amount)} telah dikirim ke pengurus koperasi untuk diproses.`);
+            showModal('Pengajuan Pinjaman Berhasil!', `Pengajuan pinjaman sebesar ${formatRupiah(amount)} telah dikirim ke pengurus koperasi untuk diproses. Perlu diketahui, biaya provisi ${provisionRate}% (${formatRupiah(provisionFee)}) akan dipotong langsung dari dana yang dicairkan sehingga dana bersih yang diterima adalah ${formatRupiah(amount - provisionFee)}.`);
         }
 
         function renderMemberLoansTable() {
@@ -7032,6 +7574,8 @@
             const member = members.find(m => m.id === currentUser.memberId);
             const activeLoan = loanApplications.find(l => l.memberId === currentUser.memberId && l.status === 'Disetujui' && (l.outstandingAmount || 0) > 0);
 
+            renderMemberLoanPaymentRequests();
+
             if (!member || !activeLoan) {
                 noLoanBox.classList.remove('hidden');
                 form.classList.add('hidden');
@@ -7045,6 +7589,80 @@
             updateMemberLoanPaymentInfo();
         }
 
+        // Menyimpan sementara base64 foto/screenshot bukti transfer yang baru dipilih
+        // anggota untuk pembayaran angsuran pinjaman, sebelum form disubmit.
+        let pendingLoanPaymentProofBase64 = null;
+
+        function handleLoanPaymentProofFileChange(input) {
+            const file = input.files && input.files[0];
+            const previewWrap = document.getElementById('mp-pay-proof-preview-wrap');
+            const previewImg = document.getElementById('mp-pay-proof-preview-img');
+
+            if (!file) {
+                pendingLoanPaymentProofBase64 = null;
+                previewWrap.classList.add('hidden');
+                previewImg.src = '';
+                return;
+            }
+
+            if (file.size > 2 * 1024 * 1024) {
+                showModal('Ukuran File Terlalu Besar', 'Ukuran file bukti transfer maksimal 2MB. Silakan pilih file lain.', true);
+                input.value = '';
+                pendingLoanPaymentProofBase64 = null;
+                previewWrap.classList.add('hidden');
+                previewImg.src = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                pendingLoanPaymentProofBase64 = ev.target.result;
+                previewImg.src = pendingLoanPaymentProofBase64;
+                previewWrap.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Membuka bukti transfer (foto/screenshot) milik sebuah pengajuan Pembayaran
+        // Angsuran Pinjaman via Transfer Bank di tab baru, dipakai baik oleh Anggota
+        // (riwayat pengajuannya sendiri) maupun Petugas Teller (antrean verifikasi).
+        function viewLoanPaymentProof(reqId) {
+            const req = loanPaymentRequests.find(r => r.id === reqId);
+            if (!req || !req.proofFile) return;
+            const w = window.open('');
+            w.document.write(`<title>Bukti Transfer - ${req.memberName}</title><body style="margin:0;background:#0f172a;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${req.proofFile}" style="max-width:100%;max-height:100%;"></body>`);
+        }
+
+        function renderMemberLoanPaymentRequests() {
+            if (!currentUser || currentUser.role !== 'member') return;
+            const wrap = document.getElementById('mp-loan-payment-req-wrap');
+            const tbody = document.getElementById('mp-loan-payment-req-body');
+            if (!wrap || !tbody) return;
+
+            const myReqs = loanPaymentRequests.filter(r => r.memberId === currentUser.memberId);
+            if (myReqs.length === 0) {
+                wrap.classList.add('hidden');
+                return;
+            }
+            wrap.classList.remove('hidden');
+
+            const statusBadge = {
+                pending: `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">Menunggu</span>`,
+                approved: `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Disetujui</span>`,
+                rejected: `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">Ditolak</span>`
+            };
+            const sorted = [...myReqs].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+            tbody.innerHTML = sorted.map(r => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-2.5 px-3">${r.date} ${r.time}</td>
+                    <td class="py-2.5 px-3 font-mono text-[11px]">${r.loanId}</td>
+                    <td class="py-2.5 px-3 text-right font-mono font-semibold">${formatRupiah(r.amount)}</td>
+                    <td class="py-2.5 px-3 text-center">${r.proofFile ? `<button type="button" onclick="viewLoanPaymentProof('${r.id}')" class="text-brand-600 hover:text-brand-800" title="Lihat Bukti Transfer"><i class="fa-solid fa-image"></i></button>` : '-'}</td>
+                    <td class="py-2.5 px-3 text-center">${statusBadge[r.status] || r.status}</td>
+                </tr>
+            `).join('');
+        }
+
         // Menampilkan info saldo sukarela / instruksi transfer bank sesuai metode yang dipilih anggota
         function updateMemberLoanPaymentInfo() {
             if (!currentUser || currentUser.role !== 'member') return;
@@ -7054,13 +7672,21 @@
             const transferBox = document.getElementById('mp-pay-transfer-info');
             if (!member || !sukarelaBox || !transferBox) return;
 
+            const proofWrap = document.getElementById('mp-pay-proof-wrap');
+            const proofInput = document.getElementById('mp-pay-input-proof');
+
             if (method === 'sukarela') {
                 sukarelaBox.classList.remove('hidden');
                 transferBox.classList.add('hidden');
                 document.getElementById('mp-pay-sukarela-balance').innerText = formatRupiah(member.simpananSukarela || 0);
+                if (proofWrap) proofWrap.classList.add('hidden');
+                if (proofInput) proofInput.required = false;
             } else {
                 sukarelaBox.classList.add('hidden');
                 transferBox.classList.remove('hidden');
+                renderCoopBankAccountsInfo('mp-pay-bank-accounts-info');
+                if (proofWrap) proofWrap.classList.remove('hidden');
+                if (proofInput) proofInput.required = true;
             }
         }
 
@@ -7093,7 +7719,44 @@
                 return;
             }
 
-            if (method === 'sukarela' && amount > (member.simpananSukarela || 0)) {
+            // Metode Transfer Bank: anggota sudah transfer dana ke rekening koperasi secara
+            // mandiri, lalu mengajukan pencatatan pembayaran ini berstatus "Menunggu" beserta
+            // bukti transfer. Sisa pinjaman & saldo TIDAK berubah sampai Petugas Teller
+            // memverifikasi bukti transfer dan menyetujuinya (approveLoanPaymentRequest).
+            if (method === 'transfer') {
+                if (!pendingLoanPaymentProofBase64) {
+                    showModal('Kesalahan', 'Bukti transfer wajib diunggah agar dapat diperiksa Petugas Teller sebelum pembayaran disetujui.', true);
+                    return;
+                }
+
+                const now = new Date();
+                loanPaymentRequests.unshift({
+                    id: `APB-${String(loanPaymentReqSeq).padStart(4, '0')}`,
+                    loanId: loan.id,
+                    memberId: member.id,
+                    memberName: member.name,
+                    amount,
+                    proofFile: pendingLoanPaymentProofBase64,
+                    status: 'pending',
+                    date: todayStr(),
+                    time: now.toTimeString().slice(0, 5),
+                    processedBy: null,
+                    processedAt: null
+                });
+                loanPaymentReqSeq++;
+
+                document.getElementById('form-member-loan-payment').reset();
+                document.getElementById('mp-pay-method').value = 'sukarela';
+                pendingLoanPaymentProofBase64 = null;
+                document.getElementById('mp-pay-proof-preview-wrap').classList.add('hidden');
+                document.getElementById('mp-pay-proof-preview-img').src = '';
+                renderMemberPortal();
+                saveStateToFirebase();
+                showModal('Pengajuan Terkirim', `Pengajuan pembayaran angsuran sebesar ${formatRupiah(amount)} via Transfer Bank berhasil dikirim dan berstatus Menunggu. Sisa pinjaman akan otomatis berkurang setelah Petugas Teller memverifikasi bukti transfer Anda.`);
+                return;
+            }
+
+            if (amount > (member.simpananSukarela || 0)) {
                 showModal('Saldo Tidak Cukup', `Saldo Simpanan Sukarela Anda hanya ${formatRupiah(member.simpananSukarela || 0)}, tidak cukup untuk membayar ${formatRupiah(amount)}. Pilih metode Transfer Bank atau kurangi nominal pembayaran.`, true);
                 return;
             }
@@ -7118,20 +7781,18 @@
             loan.tunggakan = false;
 
             const date = new Date().toISOString().split('T')[0];
-            const methodLabel = method === 'sukarela' ? 'Potong Simpanan Sukarela' : 'Transfer Bank';
+            const methodLabel = 'Potong Simpanan Sukarela';
 
-            if (method === 'sukarela') {
-                // Potong langsung dari saldo Simpanan Sukarela anggota & catat pada buku tabungannya
-                member.simpananSukarela -= amount;
-                savingsMutations.push({
-                    memberId: member.id,
-                    date,
-                    desc: `Pembayaran Angsuran Pinjaman ${loan.id} (Potong Simpanan Sukarela)`,
-                    debit: 0,
-                    credit: amount,
-                    coaCode: '2-1100'
-                });
-            }
+            // Potong langsung dari saldo Simpanan Sukarela anggota & catat pada buku tabungannya
+            member.simpananSukarela -= amount;
+            savingsMutations.push({ time: getCurrentTimeStr(),
+                memberId: member.id,
+                date,
+                desc: `Pembayaran Angsuran Pinjaman ${loan.id} (Potong Simpanan Sukarela)`,
+                debit: 0,
+                credit: amount,
+                coaCode: '2-1100'
+            });
 
             loanPayments.unshift({
                 id: 'AP-' + loanPaymentSeq++,
@@ -7149,10 +7810,6 @@
 
             // Jurnal otomatis ke laporan keuangan koperasi: pokok mengurangi Piutang
             // Pinjaman Anggota, jasa/keuntungan menjadi Pendapatan Jasa Pinjaman.
-            // Untuk metode Transfer Bank, dana juga dicatat masuk ke Rekening Bank Koperasi.
-            if (method === 'transfer') {
-                postAutoTransaction('pemasukan', '1-1200', amount, `Penerimaan transfer bank pembayaran angsuran pinjaman ${loan.id} oleh ${loan.memberName}`, date);
-            }
             postAutoTransaction('pemasukan', '1-1300', principalAmount, `Pembayaran pokok angsuran pinjaman ${loan.id} oleh ${loan.memberName} (${methodLabel})`, date);
             postAutoTransaction('pemasukan', '4-1100', serviceAmount, `Pendapatan jasa/keuntungan angsuran pinjaman ${loan.id} oleh ${loan.memberName} (${methodLabel})`, date);
 
@@ -7171,14 +7828,91 @@
         }
 
         // 3. TRANSFER ANTAR ANGGOTA
+        // Inisialisasi kotak pencarian penerima transfer (berdasarkan nama / no. rekening / no. anggota).
         function populateTransferRecipients() {
             if (!currentUser || currentUser.role !== 'member') return;
-            const select = document.getElementById('transfer-recipient');
-            const otherMembers = members.filter(m => m.id !== currentUser.memberId);
 
-            select.innerHTML = otherMembers.map(m => `
-                <option value="${m.id}">${m.name} (${m.id}) - Simpanan: ${formatRupiah(m.simpananSukarela)}</option>
+            // Reset state pencarian setiap kali subtab transfer dibuka
+            const searchInput = document.getElementById('transfer-recipient-search');
+            if (searchInput) searchInput.value = '';
+            document.getElementById('transfer-recipient').value = '';
+            document.getElementById('transfer-recipient-results').classList.add('hidden');
+            document.getElementById('transfer-recipient-selected').classList.add('hidden');
+            document.getElementById('transfer-recipient-clear').classList.add('hidden');
+            if (searchInput) searchInput.disabled = false;
+
+            // Pasang listener hanya sekali
+            if (searchInput && !searchInput.dataset.bound) {
+                searchInput.dataset.bound = 'true';
+                searchInput.addEventListener('input', () => renderTransferRecipientResults(searchInput.value));
+                searchInput.addEventListener('focus', () => renderTransferRecipientResults(searchInput.value));
+                document.addEventListener('click', (e) => {
+                    const wrapper = document.getElementById('transfer-recipient-results');
+                    const input = document.getElementById('transfer-recipient-search');
+                    if (wrapper && input && !wrapper.contains(e.target) && e.target !== input) {
+                        wrapper.classList.add('hidden');
+                    }
+                });
+            }
+        }
+
+        // Menampilkan daftar anggota yang cocok dengan kata kunci pencarian (nama atau no. rekening)
+        function renderTransferRecipientResults(keyword) {
+            if (!currentUser || currentUser.role !== 'member') return;
+            const resultsBox = document.getElementById('transfer-recipient-results');
+            const kw = (keyword || '').trim().toLowerCase();
+
+            const otherMembers = members.filter(m => m.id !== currentUser.memberId);
+            const matches = kw === '' ? otherMembers : otherMembers.filter(m => {
+                const name = (m.name || '').toLowerCase();
+                const acc = (m.accountNumber || '').toLowerCase();
+                const memberId = (m.id || '').toLowerCase();
+                return name.includes(kw) || acc.includes(kw) || memberId.includes(kw);
+            });
+
+            if (matches.length === 0) {
+                resultsBox.innerHTML = `<div class="p-3 text-center text-slate-400 text-xs">Anggota tidak ditemukan.</div>`;
+                resultsBox.classList.remove('hidden');
+                return;
+            }
+
+            resultsBox.innerHTML = matches.slice(0, 30).map(m => `
+                <button type="button" onclick="selectTransferRecipient('${m.id}')" class="w-full text-left p-2.5 hover:bg-slate-50 flex flex-col">
+                    <span class="font-semibold text-slate-800 text-xs">${m.name}</span>
+                    <span class="text-[11px] text-slate-500 font-mono">${m.id} &middot; No. Rek: ${m.accountNumber || '-'}</span>
+                </button>
             `).join('');
+            resultsBox.classList.remove('hidden');
+        }
+
+        // Menetapkan anggota penerima terpilih dari hasil pencarian
+        function selectTransferRecipient(memberId) {
+            const member = members.find(m => m.id === memberId);
+            if (!member) return;
+
+            document.getElementById('transfer-recipient').value = member.id;
+            document.getElementById('transfer-recipient-results').classList.add('hidden');
+
+            const searchInput = document.getElementById('transfer-recipient-search');
+            searchInput.value = '';
+            searchInput.disabled = true;
+
+            document.getElementById('transfer-recipient-clear').classList.remove('hidden');
+            document.getElementById('transfer-recipient-selected').classList.remove('hidden');
+            document.getElementById('transfer-recipient-selected-name').textContent = `${member.name} (${member.id})`;
+            document.getElementById('transfer-recipient-selected-meta').textContent = `No. Rek: ${member.accountNumber || '-'} · Simpanan: ${formatRupiah(member.simpananSukarela)}`;
+        }
+
+        // Membatalkan pilihan penerima agar bisa mencari ulang
+        function clearTransferRecipient() {
+            document.getElementById('transfer-recipient').value = '';
+            document.getElementById('transfer-recipient-selected').classList.add('hidden');
+            document.getElementById('transfer-recipient-clear').classList.add('hidden');
+
+            const searchInput = document.getElementById('transfer-recipient-search');
+            searchInput.disabled = false;
+            searchInput.value = '';
+            searchInput.focus();
         }
 
         function handleTransfer(e) {
@@ -7206,8 +7940,8 @@
             recipient.simpananSukarela += amount;
 
             const today = new Date().toISOString().split('T')[0];
-            savingsMutations.push({ memberId: sender.id, date: today, desc: `Transfer Keluar ke ${recipient.name} (${recipient.id})`, debit: 0, credit: amount });
-            savingsMutations.push({ memberId: recipient.id, date: today, desc: `Transfer Masuk dari ${sender.name} (${sender.id})`, debit: amount, credit: 0 });
+            savingsMutations.push({ time: getCurrentTimeStr(), memberId: sender.id, date: today, desc: `Transfer Keluar ke ${recipient.name} (${recipient.id})`, debit: 0, credit: amount });
+            savingsMutations.push({ time: getCurrentTimeStr(), memberId: recipient.id, date: today, desc: `Transfer Masuk dari ${sender.name} (${sender.id})`, debit: amount, credit: 0 });
             // Catatan: Transfer antar anggota tidak diposting ke buku besar (transactions)
             // karena bersifat net-zero pada level COA — saldo hanya berpindah antar
             // sub-rekening anggota dalam akun yang sama (2-1100 Simpanan Sukarela
@@ -7226,6 +7960,7 @@
 
             memberTransfers.unshift(newTransfer);
             document.getElementById('form-submit-transfer').reset();
+            clearTransferRecipient();
 
             // Refresh view
             renderMemberPortal();
@@ -7334,7 +8069,7 @@
 
             member.simpananSukarela -= totalDebit;
             mitra.saldo = (mitra.saldo || 0) + amount + mitraShare;
-            savingsMutations.push({ memberId: member.id, date: today, desc: `${desc} (Mitra ${mitra.name})${fee > 0 ? ` - termasuk biaya admin ${formatRupiah(fee)}` : ''}`, debit: 0, credit: totalDebit });
+            savingsMutations.push({ time: getCurrentTimeStr(), memberId: member.id, date: today, desc: `${desc} (Mitra ${mitra.name})${fee > 0 ? ` - termasuk biaya admin ${formatRupiah(fee)}` : ''}`, debit: 0, credit: totalDebit });
 
             // Catatan: nominal pokok belanja TIDAK diposting ke buku besar (transactions) karena
             // hanya memindahkan saldo antara Simpanan Sukarela Anggota (2-1100) dan Saldo Mitra
@@ -7361,6 +8096,12 @@
                 time: now.toTimeString().slice(0, 5)
             };
             mitraMemberTransactions.unshift(txRecord);
+
+            // Aturan: seluruh transaksi Anggota ke Mitra (Setor/Tarik/Belanja) ikut
+            // dihitung sebagai Partisipasi Usaha Anggota untuk pembagian SHU kategori
+            // Jasa Usaha (Partisipasi). Nominal pokok transaksi ditambahkan ke
+            // partisipasiUsaha anggota yang bertransaksi, terlepas dari jenis transaksinya.
+            member.partisipasiUsaha = (member.partisipasiUsaha || 0) + amount;
 
             document.getElementById('form-member-belanja-mitra').reset();
             renderMemberPortal();
@@ -7414,7 +8155,7 @@
         function renderLoanProducts() {
             const container = document.getElementById('loan-products-list');
             if (!container) return;
-            container.innerHTML = loanProducts.map(p => `<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><div class="p-4 bg-emerald-50 border-b border-emerald-100 flex justify-between gap-2"><div><p class="font-bold text-slate-800 text-sm">${p.name}</p><span class="text-[10px] font-bold uppercase text-emerald-700">${p.code || 'KUSTOM'} · ${p.isDefault ? 'Bawaan Sistem' : 'Kustom'}</span></div><span class="text-[10px] font-bold uppercase px-2 py-1 rounded-full ${p.active ? 'bg-emerald-500' : 'bg-slate-400'} text-white">${p.active ? 'Aktif' : 'Nonaktif'}</span></div><div class="p-4 space-y-2 text-xs"><p class="text-slate-500">${p.desc || ''}</p><div class="flex justify-between"><span>Rentang</span><strong>${formatRupiah(p.min)} - ${p.max ? formatRupiah(p.max) : 'Tanpa batas'}</strong></div><div class="flex justify-between"><span>Jaminan</span><strong>Simpanan anggota</strong></div><div><label class="block font-semibold text-slate-700 mb-1">Persentase Jasa/Keuntungan per Bulan (%)</label><div class="flex gap-2"><input type="number" min="0.1" max="100" step="0.1" value="${p.serviceRate || 1.0}" onchange="updateLoanProductServiceRate('${p.id}', this.value)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"><span class="flex items-center font-bold text-slate-500">%</span></div><p class="text-[10px] text-slate-400 mt-1">Hanya Super Admin yang dapat mengubah persentase ini.</p></div><div><label class="block font-semibold text-slate-700 mb-1">Maksimal persetujuan dari total simpanan (%)</label><div class="flex gap-2"><input type="number" min="1" max="100" step="1" value="${p.maxApprovalPercentage || 100}" onchange="updateLoanProductPercentage('${p.id}', this.value)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"><span class="flex items-center font-bold text-slate-500">%</span></div><p class="text-[10px] text-slate-400 mt-1">Batas dihitung dari Simpanan Pokok + Wajib + Sukarela.</p></div>${p.isDefault ? '' : `<button type="button" onclick="deleteLoanProduct('${p.id}')" class="text-rose-600 font-semibold"><i class="fa-solid fa-trash mr-1"></i> Hapus</button>`}</div></div>`).join('');
+            container.innerHTML = loanProducts.map(p => `<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><div class="p-4 bg-emerald-50 border-b border-emerald-100 flex justify-between gap-2"><div><p class="font-bold text-slate-800 text-sm">${p.name}</p><span class="text-[10px] font-bold uppercase text-emerald-700">${p.code || 'KUSTOM'} · ${p.isDefault ? 'Bawaan Sistem' : 'Kustom'}</span></div><span class="text-[10px] font-bold uppercase px-2 py-1 rounded-full ${p.active ? 'bg-emerald-500' : 'bg-slate-400'} text-white">${p.active ? 'Aktif' : 'Nonaktif'}</span></div><div class="p-4 space-y-2 text-xs"><p class="text-slate-500">${p.desc || ''}</p><div class="flex justify-between"><span>Rentang</span><strong>${formatRupiah(p.min)} - ${p.max ? formatRupiah(p.max) : 'Tanpa batas'}</strong></div><div class="flex justify-between"><span>Jaminan</span><strong>Simpanan anggota</strong></div><div><label class="block font-semibold text-slate-700 mb-1">Persentase Jasa/Keuntungan per Bulan (%)</label><div class="flex gap-2"><input type="number" min="0.1" max="100" step="0.1" value="${p.serviceRate || 1.0}" onchange="updateLoanProductServiceRate('${p.id}', this.value)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"><span class="flex items-center font-bold text-slate-500">%</span></div><p class="text-[10px] text-slate-400 mt-1">Hanya Super Admin yang dapat mengubah persentase ini.</p></div><div><label class="block font-semibold text-slate-700 mb-1">Maksimal persetujuan dari total simpanan (%)</label><div class="flex gap-2"><input type="number" min="1" max="100" step="1" value="${p.maxApprovalPercentage || 100}" onchange="updateLoanProductPercentage('${p.id}', this.value)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"><span class="flex items-center font-bold text-slate-500">%</span></div><p class="text-[10px] text-slate-400 mt-1">Batas dihitung dari Simpanan Pokok + Wajib + Sukarela.</p></div><div><label class="block font-semibold text-slate-700 mb-1">Biaya Provisi (%)</label><div class="flex gap-2"><input type="number" min="0" max="100" step="0.1" value="${p.provisionRate != null ? p.provisionRate : 1.0}" onchange="updateLoanProductProvisionRate('${p.id}', this.value)" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"><span class="flex items-center font-bold text-slate-500">%</span></div><p class="text-[10px] text-slate-400 mt-1">Dipotong langsung dari dana yang dicairkan ke anggota saat pinjaman disetujui.</p></div>${p.isDefault ? '' : `<button type="button" onclick="deleteLoanProduct('${p.id}')" class="text-rose-600 font-semibold"><i class="fa-solid fa-trash mr-1"></i> Hapus</button>`}</div></div>`).join('');
         }
 
         function updateLoanProductServiceRate(id, value) {
@@ -7430,6 +8171,22 @@
             product.serviceRate = rate;
             saveStateToFirebase();
             showModal('Jasa Pinjaman Disimpan', `Persentase jasa ${product.name} sekarang ${rate}% per bulan.`);
+        }
+
+        function updateLoanProductProvisionRate(id, value) {
+            if (!currentUser || currentUser.role !== 'admin') return;
+            const product = loanProducts.find(p => p.id === id);
+            const rate = parseFloat(value);
+            if (!product) return;
+            if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
+                showModal('Persentase Tidak Valid', 'Biaya provisi harus berupa angka antara 0% sampai 100%.', true);
+                renderLoanProducts();
+                return;
+            }
+            product.provisionRate = rate;
+            renderLoanProducts();
+            saveStateToFirebase();
+            showModal('Biaya Provisi Disimpan', `Biaya provisi ${product.name} sekarang ${rate}% dari plafon pinjaman.`);
         }
 
         function updateLoanProductPercentage(id, value) {
@@ -7451,14 +8208,20 @@
             const name = document.getElementById('lp-new-name').value.trim();
             const min = parseFloat(document.getElementById('lp-new-min').value) || 0;
             const max = parseFloat(document.getElementById('lp-new-max').value) || null;
+            const provisionRate = parseFloat(document.getElementById('lp-new-provisi').value);
             const error = document.getElementById('lp-new-error');
             if (!name || min <= 0 || (max && max < min) || loanProducts.some(p => p.name.toLowerCase() === name.toLowerCase())) {
                 error.innerText = 'Nama produk harus unik, minimal lebih dari 0, dan maksimal tidak boleh lebih kecil dari minimal.';
                 error.classList.remove('hidden');
                 return;
             }
+            if (!Number.isFinite(provisionRate) || provisionRate < 0 || provisionRate > 100) {
+                error.innerText = 'Biaya provisi harus berupa angka antara 0% sampai 100%.';
+                error.classList.remove('hidden');
+                return;
+            }
             error.classList.add('hidden');
-            loanProducts.push({ id: `loan-${loanProductSeq++}`, name, code: 'KUSTOM', min, max, maxApprovalPercentage: 100, serviceRate: 1.0, collateralType: 'simpanan', active: true, isDefault: false, desc: 'Produk pinjaman kustom yang ditambahkan pengurus.' });
+            loanProducts.push({ id: `loan-${loanProductSeq++}`, name, code: 'KUSTOM', min, max, maxApprovalPercentage: 100, serviceRate: 1.0, provisionRate: provisionRate, collateralType: 'simpanan', active: true, isDefault: false, desc: 'Produk pinjaman kustom yang ditambahkan pengurus.' });
             document.getElementById('form-add-loan-product').reset();
             renderLoanProducts();
             saveStateToFirebase();
@@ -7756,18 +8519,36 @@
             loan.nextDueDate = addMonthsToDateStr(approvalDateStr, 1);
             loan.tunggakan = false;
 
-            // Aturan: begitu Approver klik "Setujui", nominal pinjaman langsung
-            // dicairkan/dikreditkan ke Saldo Simpanan Sukarela anggota dan tercatat
-            // pada Buku Tabungan (mutasi debit) miliknya. Dana yang baru cair ini
-            // TIDAK ikut dikunci sebagai jaminan (lihat jaminanDariSimpananLama di
-            // atas), sehingga anggota bisa langsung memakainya.
-            member.simpananSukarela = simpananLamaSebelumCair + loan.amount;
-            savingsMutations.push({ memberId: member.id, date: approvalDateStr, desc: `Pencairan Pinjaman ${loan.id} (${product.name || 'Produk Pinjaman'})`, debit: loan.amount, credit: 0 });
+            // Aturan biaya provisi/admin: persentase per produk pinjaman
+            // (product.provisionRate) dari plafon pinjaman dipotong langsung
+            // dari dana yang dicairkan (bukan mengurangi kewajiban pokok anggota --
+            // anggota tetap berkewajiban melunasi nominal pinjaman penuh/loan.amount).
+            // Biaya ini dibukukan sebagai pendapatan koperasi pada akun 4-1200.
+            const productProvisionRate = product.provisionRate != null ? product.provisionRate : LOAN_PROVISION_RATE;
+            const provisionFee = loan.provisionFee != null ? loan.provisionFee : Math.round(loan.amount * (productProvisionRate / 100));
+            loan.provisionFee = provisionFee;
+            loan.provisionRate = loan.provisionRate != null ? loan.provisionRate : productProvisionRate;
+            const netDisbursement = loan.amount - provisionFee;
+
+            // Aturan: begitu Approver klik "Setujui", nominal pinjaman (dikurangi
+            // biaya provisi) langsung dicairkan/dikreditkan ke Saldo Simpanan
+            // Sukarela anggota dan tercatat pada Buku Tabungan (mutasi debit)
+            // miliknya. Dana yang baru cair ini TIDAK ikut dikunci sebagai jaminan
+            // (lihat jaminanDariSimpananLama di atas), sehingga anggota bisa
+            // langsung memakainya.
+            member.simpananSukarela = simpananLamaSebelumCair + netDisbursement;
+            savingsMutations.push({ time: getCurrentTimeStr(), memberId: member.id, date: approvalDateStr, desc: `Pencairan Pinjaman ${loan.id} (${product.name || 'Produk Pinjaman'}) setelah dipotong biaya provisi ${loan.provisionRate}% (${formatRupiah(provisionFee)})`, debit: netDisbursement, credit: 0 });
 
             // Add journal/financial entry for loan disbursement (kas keluar -> aset Piutang Pinjaman Anggota)
             postAutoTransaction('pengeluaran', '1-1300', loan.amount, `Pencairan dana pinjaman ${loan.id} untuk ${loan.memberName} (${loan.memberId})`, approvalDateStr);
 
-            // Increase member participation
+            // Biaya provisi dipotong dari dana cair dan dibukukan sebagai pendapatan
+            postAutoTransaction('pemasukan', '4-1200', provisionFee, `Biaya provisi ${loan.provisionRate}% pencairan pinjaman ${loan.id} atas nama ${loan.memberName}`, approvalDateStr);
+
+            // Increase member participation. Partisipasi Usaha anggota terdiri dari:
+            // (1) estimasi bunga pinjaman selama tenor (dihitung di sini), dan
+            // (2) seluruh transaksi Anggota ke Mitra / Setor-Tarik-Belanja
+            // (lihat saveMemberBelanjaMitra, saveMemberMitraTransaction, saveMitraMemberTransaction).
             var member = members.find(m => m.id === loan.memberId);
             if (member) {
                 member.partisipasiUsaha += (loan.amount * (loan.interestRate / 100) * loan.tenor);
@@ -7775,7 +8556,7 @@
 
             renderAdminLoansTable();
             saveStateToFirebase();
-            showModal('Pinjaman Disetujui!', `Pinjaman ${loan.id} sebesar ${formatRupiah(loan.amount)} atas nama ${loan.memberName} telah disetujui, dicatat pada buku piutang, dan langsung dikreditkan ke Saldo Simpanan Sukarela anggota${jaminanDariSimpananLama > 0 ? ` (jaminan ${formatRupiah(jaminanDariSimpananLama)} dikunci dari simpanan lama)` : ''}.`);
+            showModal('Pinjaman Disetujui!', `Pinjaman ${loan.id} sebesar ${formatRupiah(loan.amount)} atas nama ${loan.memberName} telah disetujui dan dicatat pada buku piutang. Setelah dipotong biaya provisi ${loan.provisionRate}% (${formatRupiah(provisionFee)}), dana bersih ${formatRupiah(netDisbursement)} langsung dikreditkan ke Saldo Simpanan Sukarela anggota${jaminanDariSimpananLama > 0 ? ` (jaminan ${formatRupiah(jaminanDariSimpananLama)} dikunci dari simpanan lama)` : ''}.`);
         }
 
         function rejectLoan(loanId) {
@@ -7892,17 +8673,17 @@
                     const sourceNotes = [];
                     if (fromSukarela > 0) {
                         member.simpananSukarela -= fromSukarela;
-                        savingsMutations.push({ memberId: member.id, date: todayStr, desc: `Auto Debet Tunggakan Pinjaman ${loan.id} - Simpanan Sukarela (Jatuh Tempo ${dueLabel})`, debit: 0, credit: fromSukarela, coaCode: '2-1100' });
+                        savingsMutations.push({ time: getCurrentTimeStr(), memberId: member.id, date: todayStr, desc: `Auto Debet Tunggakan Pinjaman ${loan.id} - Simpanan Sukarela (Jatuh Tempo ${dueLabel})`, debit: 0, credit: fromSukarela, coaCode: '2-1100' });
                         sourceNotes.push(`Sukarela ${formatRupiah(fromSukarela)}`);
                     }
                     if (fromWajib > 0) {
                         member.simpananWajib -= fromWajib;
-                        savingsMutations.push({ memberId: member.id, date: todayStr, desc: `Auto Debet Tunggakan Pinjaman ${loan.id} - Simpanan Wajib (Jatuh Tempo ${dueLabel})`, debit: 0, credit: fromWajib, coaCode: '3-1200' });
+                        savingsMutations.push({ time: getCurrentTimeStr(), memberId: member.id, date: todayStr, desc: `Auto Debet Tunggakan Pinjaman ${loan.id} - Simpanan Wajib (Jatuh Tempo ${dueLabel})`, debit: 0, credit: fromWajib, coaCode: '3-1200' });
                         sourceNotes.push(`Wajib ${formatRupiah(fromWajib)}`);
                     }
                     if (fromPokok > 0) {
                         member.simpananPokok -= fromPokok;
-                        savingsMutations.push({ memberId: member.id, date: todayStr, desc: `Auto Debet Tunggakan Pinjaman ${loan.id} - Simpanan Pokok (Jatuh Tempo ${dueLabel})`, debit: 0, credit: fromPokok, coaCode: '3-1100' });
+                        savingsMutations.push({ time: getCurrentTimeStr(), memberId: member.id, date: todayStr, desc: `Auto Debet Tunggakan Pinjaman ${loan.id} - Simpanan Pokok (Jatuh Tempo ${dueLabel})`, debit: 0, credit: fromPokok, coaCode: '3-1100' });
                         sourceNotes.push(`Pokok ${formatRupiah(fromPokok)}`);
                     }
 
@@ -8753,6 +9534,7 @@
         }
 
         function renderKrediturInvestorView() {
+            renderCoopBankAccountsInfo('ki-bank-accounts-info');
             populateKrediturInvestorCoaOptions(document.getElementById('ki-input-coa') ? document.getElementById('ki-input-coa').value : '');
 
             const total = krediturInvestorList.length;
@@ -10126,6 +10908,10 @@
 
             members = [];
             savingsMutations = [];
+            savingsDepositRequests = [];
+            savingsDepositReqSeq = 1;
+            loanPaymentRequests = [];
+            loanPaymentReqSeq = 1;
             memberSeq = 1;
             accountSeq = 1;
             transactionSeq = 1;
@@ -10448,7 +11234,7 @@
             const reconBody = document.getElementById('pt-kas-recon-body');
             const sortedSessions = [...tellerCashSessions].sort((a, b) => (b.date + b.openingTime).localeCompare(a.date + a.openingTime));
             if (sortedSessions.length === 0) {
-                reconBody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">Belum ada sesi kas teller yang dibuka.</td></tr>`;
+                reconBody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">Belum ada sesi kas teller yang dibuka.</td></tr>`;
             } else {
                 reconBody.innerHTML = sortedSessions.map(s => {
                     const isClosed = s.status === 'closed';
@@ -10458,6 +11244,7 @@
                             ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700"><i class="fa-solid fa-lock mr-1"></i>Ditutup - Kunci Otomatis</span>`
                             : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">Ditutup</span>`)
                         : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">Berjalan</span>`;
+                    const transferBankTotal = isClosed ? (s.totalSetoranTransferBank || 0) : computeSessionRunningBalance(s).totalSetoranTransferBank;
                     return `
                         <tr class="hover:bg-slate-50">
                             <td class="py-2.5 px-3 font-medium">${s.date}</td>
@@ -10466,6 +11253,7 @@
                             <td class="py-2.5 px-3 text-right font-mono">${isClosed ? formatRupiah(s.closingBalanceSystem) : '-'}</td>
                             <td class="py-2.5 px-3 text-right font-mono">${isClosed ? formatRupiah(s.closingBalanceActual) : '-'}</td>
                             <td class="py-2.5 px-3 text-right font-mono font-bold ${diffClass}">${isClosed ? formatRupiah(s.difference) : '-'}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-indigo-700">${formatRupiah(transferBankTotal)}</td>
                             <td class="py-2.5 px-3 text-center">
                                 ${statusBadge}
                             </td>
@@ -10515,6 +11303,164 @@
             }
 
             renderTransactionCorrectionRequestsTable();
+        }
+
+        // ==========================================
+        // ADMIN: REKENING BANK KOPERASI
+        // Daftar rekening bank resmi koperasi (input manual: Nama Bank, Nomor Rekening,
+        // A/N) yang dikelola Admin lewat menu "Rekening Bank Koperasi", lalu ditampilkan
+        // sebagai info read-only (hanya rekening berstatus Aktif) di berbagai halaman lain
+        // — Portal Anggota, Loket Teller, Manajemen Mitra, dan Manajemen Kreditur/Investor —
+        // lewat renderCoopBankAccountsInfo(containerId), sehingga siapa pun yang perlu
+        // mentransfer dana ke koperasi tahu rekening tujuan yang benar tanpa perlu bertanya.
+        // ==========================================
+        function generateCoopBankAccountId() {
+            const id = `RBK-${String(coopBankAccountSeq).padStart(3, '0')}`;
+            coopBankAccountSeq++;
+            return id;
+        }
+
+        function saveCoopBankAccount(e) {
+            e.preventDefault();
+            const errorBox = document.getElementById('rbk-form-error');
+            const errorText = document.getElementById('rbk-form-error-text');
+            errorBox.classList.add('hidden');
+
+            const editId = document.getElementById('rbk-input-id').value;
+            const bankName = document.getElementById('rbk-input-bank-name').value.trim();
+            const accountNumber = document.getElementById('rbk-input-account-number').value.trim();
+            const accountHolder = document.getElementById('rbk-input-account-holder').value.trim();
+            const note = document.getElementById('rbk-input-note').value.trim();
+
+            if (!bankName || !accountNumber || !accountHolder) {
+                errorText.innerText = 'Nama Bank, Nomor Rekening, dan A/N wajib diisi.';
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            if (editId) {
+                const acc = coopBankAccounts.find(a => a.id === editId);
+                if (acc) {
+                    acc.bankName = bankName;
+                    acc.accountNumber = accountNumber;
+                    acc.accountHolder = accountHolder;
+                    acc.note = note;
+                }
+            } else {
+                coopBankAccounts.unshift({
+                    id: generateCoopBankAccountId(),
+                    bankName,
+                    accountNumber,
+                    accountHolder,
+                    note,
+                    isActive: true
+                });
+            }
+
+            cancelEditCoopBankAccount();
+            renderCoopBankAccountsAdmin();
+            saveStateToFirebase();
+            showModal(editId ? 'Rekening Diperbarui' : 'Rekening Ditambahkan', `Rekening ${bankName} a/n ${accountHolder} berhasil ${editId ? 'diperbarui' : 'ditambahkan'} dan akan tampil sebagai referensi transfer di halaman terkait.`);
+        }
+
+        function editCoopBankAccount(id) {
+            const acc = coopBankAccounts.find(a => a.id === id);
+            if (!acc) return;
+            document.getElementById('rbk-input-id').value = acc.id;
+            document.getElementById('rbk-input-bank-name').value = acc.bankName;
+            document.getElementById('rbk-input-account-number').value = acc.accountNumber;
+            document.getElementById('rbk-input-account-holder').value = acc.accountHolder;
+            document.getElementById('rbk-input-note').value = acc.note || '';
+            document.getElementById('rbk-form-title').innerText = 'Edit Rekening Bank';
+            document.getElementById('rbk-submit-label').innerText = 'Simpan Perubahan';
+            document.getElementById('rbk-cancel-edit-btn').classList.remove('hidden');
+            document.getElementById('rbk-form-error').classList.add('hidden');
+        }
+
+        function cancelEditCoopBankAccount() {
+            document.getElementById('form-rekening-bank').reset();
+            document.getElementById('rbk-input-id').value = '';
+            document.getElementById('rbk-form-title').innerText = 'Tambah Rekening Bank';
+            document.getElementById('rbk-submit-label').innerText = 'Simpan Rekening';
+            document.getElementById('rbk-cancel-edit-btn').classList.add('hidden');
+            document.getElementById('rbk-form-error').classList.add('hidden');
+        }
+
+        function toggleCoopBankAccountActive(id) {
+            const acc = coopBankAccounts.find(a => a.id === id);
+            if (!acc) return;
+            acc.isActive = !acc.isActive;
+            renderCoopBankAccountsAdmin();
+            saveStateToFirebase();
+        }
+
+        function deleteCoopBankAccount(id) {
+            const acc = coopBankAccounts.find(a => a.id === id);
+            if (!acc) return;
+            if (!confirm(`Hapus rekening ${acc.bankName} a/n ${acc.accountHolder}? Tindakan ini tidak dapat dibatalkan.`)) return;
+            coopBankAccounts = coopBankAccounts.filter(a => a.id !== id);
+            if (document.getElementById('rbk-input-id').value === id) cancelEditCoopBankAccount();
+            renderCoopBankAccountsAdmin();
+            saveStateToFirebase();
+        }
+
+        function renderCoopBankAccountsAdmin() {
+            const tbody = document.getElementById('rbk-list-body');
+            if (!tbody) return;
+            document.getElementById('rbk-total-label').innerText = `${coopBankAccounts.length} Rekening`;
+
+            if (coopBankAccounts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Belum ada rekening bank koperasi. Gunakan form di samping untuk menambahkan.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = coopBankAccounts.map(a => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-2.5 px-3 font-medium">${a.bankName}</td>
+                    <td class="py-2.5 px-3 font-mono">${a.accountNumber}</td>
+                    <td class="py-2.5 px-3">${a.accountHolder}</td>
+                    <td class="py-2.5 px-3 text-slate-500">${a.note || '-'}</td>
+                    <td class="py-2.5 px-3 text-center">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${a.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">${a.isActive ? 'Aktif' : 'Nonaktif'}</span>
+                    </td>
+                    <td class="py-2.5 px-3 text-center">
+                        <div class="flex justify-center gap-1.5">
+                            <button onclick="editCoopBankAccount('${a.id}')" title="Edit" class="w-7 h-7 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center"><i class="fa-solid fa-pen text-[11px]"></i></button>
+                            <button onclick="toggleCoopBankAccountActive('${a.id}')" title="${a.isActive ? 'Nonaktifkan' : 'Aktifkan'}" class="w-7 h-7 rounded-lg ${a.isActive ? 'bg-amber-100 hover:bg-amber-200 text-amber-600' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-600'} flex items-center justify-center"><i class="fa-solid ${a.isActive ? 'fa-toggle-off' : 'fa-toggle-on'} text-[11px]"></i></button>
+                            <button onclick="deleteCoopBankAccount('${a.id}')" title="Hapus" class="w-7 h-7 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-trash text-[11px]"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Menampilkan kartu info rekening bank koperasi (read-only, hanya yang Aktif) ke
+        // dalam sebuah elemen container. Dipakai di berbagai halaman: Portal Anggota
+        // (Setoran via Transfer Bank, Bayar Angsuran via Transfer), Loket Teller,
+        // Manajemen Mitra, dan Manajemen Kreditur/Investor — agar semua pihak yang perlu
+        // mentransfer dana ke koperasi melihat info rekening tujuan yang sama & selalu
+        // ter-update begitu Admin mengubahnya.
+        function renderCoopBankAccountsInfo(containerId) {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            const activeAccounts = coopBankAccounts.filter(a => a.isActive);
+
+            if (activeAccounts.length === 0) {
+                el.innerHTML = `<div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-400 text-[11px]">Belum ada rekening bank koperasi yang diatur Admin.</div>`;
+                return;
+            }
+
+            el.innerHTML = `
+                <div class="p-3 rounded-lg bg-blue-50 border border-blue-200 space-y-2">
+                    <div class="text-[10px] font-bold uppercase text-blue-700 flex items-center gap-1.5"><i class="fa-solid fa-building-columns"></i> Rekening Bank Koperasi</div>
+                    ${activeAccounts.map(a => `
+                        <div class="text-xs border-t border-blue-100 first:border-t-0 pt-2 first:pt-0">
+                            <div class="font-bold text-slate-800">${a.bankName} <span class="font-mono font-semibold text-brand-700">${a.accountNumber}</span></div>
+                            <div class="text-slate-500">a/n ${a.accountHolder}${a.note ? ` &middot; ${a.note}` : ''}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
         }
 
         // ==========================================
@@ -11025,6 +11971,7 @@
         // Panel utama menu Mitra: dipanggil setiap kali tab Mitra dibuka atau ada
         // pembaruan data (mis. dari sinkronisasi Firebase) saat panel sedang aktif.
         function renderMitraView() {
+            renderCoopBankAccountsInfo('mitra-bank-accounts-info');
             renderMitraStats();
             renderMitraList();
             populateMitraSelects();
@@ -11493,7 +12440,7 @@
                 }
                 mitra.saldo = (mitra.saldo || 0) - netCredit + mitraShare;
                 member.simpananSukarela += netCredit;
-                savingsMutations.push({ memberId: member.id, date: today, desc: `${desc} (Mitra ${mitra.name})${fee > 0 ? ` - net setelah biaya admin ${formatRupiah(fee)}` : ''}`, debit: netCredit, credit: 0 });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId: member.id, date: today, desc: `${desc} (Mitra ${mitra.name})${fee > 0 ? ` - net setelah biaya admin ${formatRupiah(fee)}` : ''}`, debit: netCredit, credit: 0 });
             } else {
                 // Tarik Tunai atau Belanja: anggota menerima tunai/barang senilai 'amount' dari
                 // Mitra. Biaya admin dibebankan sebagai tambahan potongan dari Simpanan
@@ -11507,7 +12454,7 @@
                 }
                 member.simpananSukarela -= totalDebit;
                 mitra.saldo = (mitra.saldo || 0) + amount + mitraShare;
-                savingsMutations.push({ memberId: member.id, date: today, desc: `${desc} (Mitra ${mitra.name})${fee > 0 ? ` - termasuk biaya admin ${formatRupiah(fee)}` : ''}`, debit: 0, credit: totalDebit });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId: member.id, date: today, desc: `${desc} (Mitra ${mitra.name})${fee > 0 ? ` - termasuk biaya admin ${formatRupiah(fee)}` : ''}`, debit: 0, credit: totalDebit });
             }
 
             // Catatan: nominal pokok transaksi Mitra ke Anggota TIDAK diposting ke buku besar
@@ -11539,6 +12486,12 @@
                 time: now.toTimeString().slice(0, 5)
             };
             mitraMemberTransactions.unshift(txRecord);
+
+            // Aturan: seluruh transaksi Anggota ke Mitra (Setor/Tarik/Belanja) ikut
+            // dihitung sebagai Partisipasi Usaha Anggota untuk pembagian SHU kategori
+            // Jasa Usaha (Partisipasi). Nominal pokok transaksi ditambahkan ke
+            // partisipasiUsaha anggota yang bertransaksi, terlepas dari jenis transaksinya.
+            member.partisipasiUsaha = (member.partisipasiUsaha || 0) + amount;
 
             document.getElementById('form-mitra-member-tx').reset();
             renderMitraView();
@@ -11677,6 +12630,13 @@
             const totalSetoran = tx.filter(t => t.type === 'setoran' || t.type === 'setoran_wajib').reduce((sum, t) => sum + t.amount, 0);
             const totalTarikan = tx.filter(t => t.type === 'tarikan').reduce((sum, t) => sum + t.amount, 0);
 
+            // Setoran Simpanan via Transfer Bank yang disetujui Petugas Teller (lihat
+            // approveSavingsDepositRequest): direkap TERPISAH sebagai transaksi non-tunai
+            // hari ini, ditampilkan pada Kas Teller & ikut tercatat saat Tutup Kas, namun
+            // TIDAK ditambahkan ke kas fisik/runningBalance karena dananya sudah langsung
+            // masuk ke rekening bank koperasi (bukan uang tunai di laci teller).
+            const totalSetoranTransferBank = tx.filter(t => TELLER_TX_NON_CASH_TYPES.includes(t.type)).reduce((sum, t) => sum + t.amount, 0);
+
             // Transaksi kas masuk/keluar umum (dicatat lewat menu Transaksi Keuangan oleh
             // Petugas Teller selama sesi ini) juga memengaruhi kas fisik yang dipegang
             // teller, sehingga ikut dihitung dalam saldo kas berjalan dan rekonsiliasi
@@ -11688,6 +12648,7 @@
             return {
                 totalSetoran,
                 totalTarikan,
+                totalSetoranTransferBank,
                 totalKasMasukLain,
                 totalKasKeluarLain,
                 runningBalance: session.openingBalance + totalSetoran - totalTarikan + totalKasMasukLain - totalKasKeluarLain
@@ -11733,7 +12694,7 @@
                 return;
             }
 
-            const { totalSetoran, totalTarikan, totalKasMasukLain, totalKasKeluarLain, runningBalance } = computeSessionRunningBalance(session);
+            const { totalSetoran, totalTarikan, totalSetoranTransferBank, totalKasMasukLain, totalKasKeluarLain, runningBalance } = computeSessionRunningBalance(session);
             card.innerHTML = `
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-200 pb-3 mb-4">
                     <h3 class="font-bold text-slate-800 flex items-center gap-2">
@@ -11769,6 +12730,15 @@
                         <div class="font-mono font-bold text-blue-900">${formatRupiah(runningBalance)}</div>
                     </div>
                 </div>
+                <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-lg mb-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-[10px] text-indigo-700 font-semibold uppercase">Setoran via Transfer Bank (Non-Tunai)</div>
+                            <div class="text-[9px] text-indigo-500 mt-0.5">Pengajuan anggota yang Anda setujui hari ini. Sudah masuk rekening bank koperasi, sehingga TIDAK termasuk kas fisik di atas — hanya direkap sebagai transaksi harian.</div>
+                        </div>
+                        <div class="font-mono font-bold text-indigo-900 whitespace-nowrap ml-3">${formatRupiah(totalSetoranTransferBank)}</div>
+                    </div>
+                </div>
                 <details class="text-xs">
                     <summary class="cursor-pointer font-semibold text-brand-700 select-none">Tutup Kas Hari Ini</summary>
                     <form onsubmit="closeTellerKas(event)" class="mt-3 space-y-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
@@ -11776,6 +12746,7 @@
                             <label class="block font-semibold text-slate-700 mb-1">Saldo Akhir Kas Fisik (Rp)</label>
                             <input type="number" id="tl-input-saldo-akhir" min="0" required placeholder="Hitung uang fisik di laci teller" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
                             <p class="text-[10px] text-slate-400 mt-1">Saldo sistem saat ini (sudah termasuk kas masuk/keluar dari Transaksi Keuangan): ${formatRupiah(runningBalance)}</p>
+                            <p class="text-[10px] text-slate-400 mt-1">Setoran via Transfer Bank (non-tunai) hari ini: ${formatRupiah(totalSetoranTransferBank)} — sudah tercatat di buku tabungan anggota & buku besar, tidak perlu disetorkan sebagai kas fisik.</p>
                         </div>
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Catatan Tutup Kas (opsional)</label>
@@ -11853,11 +12824,12 @@
 
             const actual = parseFloat(document.getElementById('tl-input-saldo-akhir').value) || 0;
             const note = document.getElementById('tl-input-catatan-akhir').value.trim();
-            const { runningBalance } = computeSessionRunningBalance(session);
+            const { runningBalance, totalSetoranTransferBank } = computeSessionRunningBalance(session);
 
             session.closingBalanceSystem = runningBalance;
             session.closingBalanceActual = actual;
             session.difference = actual - runningBalance;
+            session.totalSetoranTransferBank = totalSetoranTransferBank;
             session.closingNote = note;
             session.closingTime = new Date().toTimeString().slice(0, 5);
             session.status = 'closed';
@@ -11907,8 +12879,19 @@
         const TELLER_TX_TYPE_META = {
             setoran: { label: 'Setoran Simpanan Sukarela', badge: 'Setoran', badgeClass: 'bg-emerald-100 text-emerald-700', savingsField: 'simpananSukarela', savingsLabel: 'Saldo Sukarela Terkini' },
             tarikan: { label: 'Tarikan Simpanan Sukarela', badge: 'Tarikan', badgeClass: 'bg-rose-100 text-rose-700', savingsField: 'simpananSukarela', savingsLabel: 'Saldo Sukarela Terkini' },
-            setoran_wajib: { label: 'Setoran Simpanan Wajib', badge: 'Setoran Wajib', badgeClass: 'bg-emerald-100 text-emerald-700', savingsField: 'simpananWajib', savingsLabel: 'Saldo Wajib Terkini' }
+            setoran_wajib: { label: 'Setoran Simpanan Wajib', badge: 'Setoran Wajib', badgeClass: 'bg-emerald-100 text-emerald-700', savingsField: 'simpananWajib', savingsLabel: 'Saldo Wajib Terkini' },
+            // Jenis non-tunai: dibuat otomatis oleh approveSavingsDepositRequest() saat
+            // Petugas Teller menyetujui pengajuan Setoran Simpanan via Transfer Bank dari
+            // Portal Anggota. Nominalnya TIDAK termasuk kas fisik (lihat computeSessionRunningBalance),
+            // hanya ditampilkan terpisah sebagai rekap non-tunai pada Kas Teller & Tutup Kas.
+            transfer_pokok: { label: 'Setoran Simpanan Pokok (Transfer Bank)', badge: 'Transfer Pokok', badgeClass: 'bg-blue-100 text-blue-700', savingsField: 'simpananPokok', savingsLabel: 'Saldo Pokok Terkini' },
+            transfer_wajib: { label: 'Setoran Simpanan Wajib (Transfer Bank)', badge: 'Transfer Wajib', badgeClass: 'bg-blue-100 text-blue-700', savingsField: 'simpananWajib', savingsLabel: 'Saldo Wajib Terkini' },
+            transfer_sukarela: { label: 'Setoran Simpanan Sukarela (Transfer Bank)', badge: 'Transfer Sukarela', badgeClass: 'bg-blue-100 text-blue-700', savingsField: 'simpananSukarela', savingsLabel: 'Saldo Sukarela Terkini' }
         };
+
+        // Jenis tellerTransactions yang bersifat non-tunai (tidak menambah kas fisik teller),
+        // dipakai oleh computeSessionRunningBalance() untuk memisahkan rekapnya dari kas fisik.
+        const TELLER_TX_NON_CASH_TYPES = ['transfer_pokok', 'transfer_wajib', 'transfer_sukarela'];
 
         function populateTellerMemberSelect() {
             const select = document.getElementById('tl-select-member');
@@ -12468,12 +13451,267 @@
         function renderTellerView() {
             if (!currentUser || currentUser.role !== 'teller') return;
             checkTellerPinRequestUpdate();
+            renderCoopBankAccountsInfo('tl-bank-accounts-info');
             renderTellerKasCard();
             populateTellerMemberSelect();
             // Refresh realtime hanya memperbarui tampilan; jangan membatalkan PIN
             // yang sudah diverifikasi untuk transaksi yang sedang berjalan.
             toggleTellerPinField(false);
             renderTellerTodayLog();
+            renderSavingsDepositRequestsQueue();
+            renderLoanPaymentRequestsQueue();
+        }
+
+        // ---------- VERIFIKASI SETORAN SIMPANAN VIA TRANSFER BANK (Loket Teller) ----------
+        // Menampilkan seluruh pengajuan Setoran Simpanan via Transfer Bank dari Portal
+        // Anggota (terbaru lebih dulu) agar Petugas Teller dapat memverifikasi bukti
+        // transfer lalu menyetujui/menolaknya. Ini murni verifikasi mutasi bank, bukan
+        // transaksi kas fisik, sehingga tidak memengaruhi Kas Teller.
+        function renderSavingsDepositRequestsQueue() {
+            if (!currentUser || currentUser.role !== 'teller') return;
+            const tbody = document.getElementById('tl-savings-deposit-req-body');
+            if (!tbody) return;
+
+            if (savingsDepositRequests.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">Belum ada pengajuan setoran via transfer bank dari anggota.</td></tr>`;
+                return;
+            }
+
+            const statusBadge = {
+                pending: `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">Menunggu</span>`,
+                approved: `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Disetujui</span>`,
+                rejected: `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">Ditolak</span>`
+            };
+            const sorted = [...savingsDepositRequests].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+            tbody.innerHTML = sorted.map(r => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-2.5 px-3">${r.date} ${r.time}</td>
+                    <td class="py-2.5 px-3">${r.memberName} <span class="text-slate-400 font-mono text-[10px]">(${r.memberId})</span></td>
+                    <td class="py-2.5 px-3">${SAVINGS_DEPOSIT_TYPE_LABEL[r.type] || r.type}</td>
+                    <td class="py-2.5 px-3 text-right font-mono font-semibold">${formatRupiah(r.amount)}</td>
+                    <td class="py-2.5 px-3 text-slate-500">${r.note || '-'}</td>
+                    <td class="py-2.5 px-3 text-center">${r.proofFile ? `<button type="button" onclick="viewSavingsDepositProof('${r.id}')" class="text-brand-600 hover:text-brand-800" title="Lihat Bukti Transfer"><i class="fa-solid fa-image"></i></button>` : '-'}</td>
+                    <td class="py-2.5 px-3 text-center">${statusBadge[r.status] || r.status}</td>
+                    <td class="py-2.5 px-3 text-center no-print">
+                        ${r.status === 'pending' ? `
+                            <div class="flex items-center justify-center gap-2">
+                                <button type="button" onclick="approveSavingsDepositRequest('${r.id}')" title="Setujui" class="text-emerald-600 hover:text-emerald-800"><i class="fa-solid fa-circle-check"></i></button>
+                                <button type="button" onclick="rejectSavingsDepositRequest('${r.id}')" title="Tolak" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-circle-xmark"></i></button>
+                            </div>
+                        ` : '-'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // COA setoran per jenis simpanan, mengikuti kode yang sama dipakai pada setoran
+        // awal anggota baru (pokok/wajib) dan mutasi manual pengurus (sukarela).
+        const SAVINGS_DEPOSIT_TYPE_COA = { pokok: '3-1100', wajib: '3-1200', sukarela: '2-1100' };
+        const SAVINGS_DEPOSIT_TYPE_BALANCE_FIELD = { pokok: 'simpananPokok', wajib: 'simpananWajib', sukarela: 'simpananSukarela' };
+
+        // Menyetujui pengajuan Setoran Simpanan via Transfer Bank: nominal langsung
+        // ditambahkan ke saldo simpanan anggota sesuai Jenis Setoran yang ia pilih saat
+        // mengajukan, tercatat sebagai mutasi debit pada Buku Tabungannya, diposting ke
+        // buku besar/COA koperasi, DAN dicatat sebagai transaksi harian pada Kas Teller
+        // milik Petugas Teller yang menyetujui (muncul di Riwayat Transaksi Hari Ini serta
+        // ikut direkap saat Tutup Kas) — namun sebagai rekap NON-TUNAI terpisah, karena
+        // dananya sudah masuk langsung ke rekening bank koperasi, bukan kas fisik di laci
+        // teller (lihat computeSessionRunningBalance & TELLER_TX_NON_CASH_TYPES).
+        function approveSavingsDepositRequest(reqId) {
+            if (!currentUser || currentUser.role !== 'teller') return;
+            const req = savingsDepositRequests.find(r => r.id === reqId);
+            if (!req || req.status !== 'pending') return;
+            const member = members.find(m => m.id === req.memberId);
+            if (!member) {
+                showModal('Anggota Tidak Ditemukan', 'Akun anggota untuk pengajuan ini sudah tidak tersedia.', true);
+                return;
+            }
+
+            const balanceField = SAVINGS_DEPOSIT_TYPE_BALANCE_FIELD[req.type];
+            const coaCode = SAVINGS_DEPOSIT_TYPE_COA[req.type];
+            const typeLabel = SAVINGS_DEPOSIT_TYPE_LABEL[req.type] || req.type;
+            const today = todayStr();
+            const nowTime = getCurrentTimeStr();
+            const desc = `Setoran ${typeLabel} via Transfer Bank${req.note ? ' - ' + req.note : ''}`;
+
+            member[balanceField] = (member[balanceField] || 0) + req.amount;
+            savingsMutations.push({ time: nowTime, memberId: member.id, date: today, desc, debit: req.amount, credit: 0, coaCode });
+            postAutoTransaction('pemasukan', coaCode, req.amount, `${desc} - ${member.name} (${member.id})`, today);
+
+            // Catat sebagai transaksi harian Kas Teller milik teller yang menyetujui, agar
+            // tercatat di Riwayat Transaksi Hari Ini dan ikut direkap saat Tutup Kas
+            // (sebagai rekap non-tunai, terpisah dari kas fisik). Jika kas teller sedang
+            // dibuka, transaksi juga terhubung ke sesi tersebut agar langsung terlihat
+            // pada kartu Kas Teller yang sedang berjalan.
+            const session = getOpenTellerSession(currentUser.tellerId);
+            const tellerTxRecord = {
+                id: `TTX-${Date.now()}`,
+                receiptNo: generateReceiptNo(),
+                tellerId: currentUser.tellerId,
+                tellerName: currentUser.name,
+                sessionId: session ? session.id : null,
+                date: today,
+                time: nowTime,
+                memberId: member.id,
+                memberName: member.name,
+                accountNumber: member.accountNumber || '-',
+                type: `transfer_${req.type}`,
+                amount: req.amount,
+                desc,
+                depositReqId: req.id
+            };
+            tellerTransactions.push(tellerTxRecord);
+
+            req.status = 'approved';
+            req.processedBy = currentUser.name;
+            req.processedAt = `${today} ${nowTime}`;
+            req.tellerTxId = tellerTxRecord.id;
+
+            renderSavingsDepositRequestsQueue();
+            renderMemberSavingsBook();
+            renderTellerKasCard();
+            renderTellerTodayLog();
+            saveStateToFirebase();
+            showModal('Setoran Disetujui', `Setoran ${typeLabel} sebesar ${formatRupiah(req.amount)} untuk ${member.name} berhasil disetujui, langsung ditambahkan ke saldo simpanannya, dan tercatat sebagai transaksi non-tunai pada Kas Teller Anda hari ini.`);
+        }
+
+        function rejectSavingsDepositRequest(reqId) {
+            if (!currentUser || currentUser.role !== 'teller') return;
+            const req = savingsDepositRequests.find(r => r.id === reqId);
+            if (!req || req.status !== 'pending') return;
+            if (!confirm('Tolak pengajuan setoran via transfer bank ini? Saldo anggota tidak akan berubah.')) return;
+            req.status = 'rejected';
+            req.processedBy = currentUser.name;
+            req.processedAt = `${todayStr()} ${getCurrentTimeStr()}`;
+            renderSavingsDepositRequestsQueue();
+            saveStateToFirebase();
+        }
+
+        // ---------- VERIFIKASI PEMBAYARAN ANGSURAN PINJAMAN VIA TRANSFER BANK (Loket Teller) ----------
+        // Menampilkan seluruh pengajuan Pembayaran Angsuran Pinjaman via Transfer Bank dari
+        // Portal Anggota (terbaru lebih dulu) agar Petugas Teller dapat memeriksa bukti
+        // transfer sebelum menyetujui/menolaknya. Sama seperti verifikasi setoran simpanan,
+        // ini murni verifikasi mutasi bank dan tidak memengaruhi Kas Teller fisik.
+        function renderLoanPaymentRequestsQueue() {
+            if (!currentUser || currentUser.role !== 'teller') return;
+            const tbody = document.getElementById('tl-loan-payment-req-body');
+            if (!tbody) return;
+
+            if (loanPaymentRequests.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">Belum ada pengajuan pembayaran angsuran via transfer bank dari anggota.</td></tr>`;
+                return;
+            }
+
+            const statusBadge = {
+                pending: `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">Menunggu</span>`,
+                approved: `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Disetujui</span>`,
+                rejected: `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">Ditolak</span>`
+            };
+            const sorted = [...loanPaymentRequests].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+            tbody.innerHTML = sorted.map(r => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-2.5 px-3">${r.date} ${r.time}</td>
+                    <td class="py-2.5 px-3">${r.memberName} <span class="text-slate-400 font-mono text-[10px]">(${r.memberId})</span></td>
+                    <td class="py-2.5 px-3 font-mono text-[11px]">${r.loanId}</td>
+                    <td class="py-2.5 px-3 text-right font-mono font-semibold">${formatRupiah(r.amount)}</td>
+                    <td class="py-2.5 px-3 text-center">${r.proofFile ? `<button type="button" onclick="viewLoanPaymentProof('${r.id}')" class="text-brand-600 hover:text-brand-800" title="Lihat Bukti Transfer"><i class="fa-solid fa-image"></i></button>` : '-'}</td>
+                    <td class="py-2.5 px-3 text-center">${statusBadge[r.status] || r.status}</td>
+                    <td class="py-2.5 px-3 text-center no-print">
+                        ${r.status === 'pending' ? `
+                            <div class="flex items-center justify-center gap-2">
+                                <button type="button" onclick="approveLoanPaymentRequest('${r.id}')" title="Setujui" class="text-emerald-600 hover:text-emerald-800"><i class="fa-solid fa-circle-check"></i></button>
+                                <button type="button" onclick="rejectLoanPaymentRequest('${r.id}')" title="Tolak" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-circle-xmark"></i></button>
+                            </div>
+                        ` : '-'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Menyetujui pengajuan Pembayaran Angsuran Pinjaman via Transfer Bank: sisa pinjaman
+        // langsung berkurang, mutasi pembayaran tercatat pada buku pinjaman anggota, dan
+        // diposting ke buku besar/COA koperasi (pokok mengurangi Piutang Pinjaman Anggota,
+        // jasa/keuntungan menjadi Pendapatan Jasa Pinjaman, dana masuk ke Rekening Bank
+        // Koperasi) — sama seperti pembayaran mandiri via transfer, hanya saja baru
+        // diterapkan setelah Petugas Teller memverifikasi bukti transfer.
+        function approveLoanPaymentRequest(reqId) {
+            if (!currentUser || currentUser.role !== 'teller') return;
+            const req = loanPaymentRequests.find(r => r.id === reqId);
+            if (!req || req.status !== 'pending') return;
+
+            const member = members.find(m => m.id === req.memberId);
+            const loan = loanApplications.find(l => l.id === req.loanId);
+            if (!member || !loan) {
+                showModal('Data Tidak Ditemukan', 'Data anggota atau pinjaman untuk pengajuan ini sudah tidak tersedia.', true);
+                return;
+            }
+
+            const outstandingBefore = loan.outstandingAmount || 0;
+            const amount = Math.min(req.amount, outstandingBefore);
+
+            const pokokBln = loan.amount / loan.tenor;
+            const bungaBln = loan.amount * (loan.interestRate / 100);
+            const totalBln = pokokBln + bungaBln;
+            const pokokRatio = totalBln > 0 ? (pokokBln / totalBln) : 1;
+
+            let principalAmount = Math.round(amount * pokokRatio);
+            if (principalAmount > outstandingBefore) principalAmount = outstandingBefore;
+            const serviceAmount = amount - principalAmount;
+
+            const outstandingAfter = Math.max(0, outstandingBefore - principalAmount);
+            loan.outstandingAmount = outstandingAfter;
+            if (outstandingAfter > 0 && loan.nextDueDate) {
+                loan.nextDueDate = addMonthsToDateStr(loan.nextDueDate, 1);
+            }
+            loan.tunggakan = false;
+
+            const date = todayStr();
+            const methodLabel = 'Transfer Bank';
+
+            loanPayments.unshift({
+                id: 'AP-' + loanPaymentSeq++,
+                loanId: loan.id,
+                memberId: loan.memberId,
+                memberName: loan.memberName,
+                date,
+                amount,
+                principalAmount,
+                serviceAmount,
+                outstandingAfter,
+                paymentMethod: methodLabel,
+                note: `Dibayar mandiri oleh anggota via ${methodLabel}, diverifikasi Petugas Teller (${currentUser.name})`
+            });
+
+            postAutoTransaction('pemasukan', '1-1200', amount, `Penerimaan transfer bank pembayaran angsuran pinjaman ${loan.id} oleh ${loan.memberName}`, date);
+            postAutoTransaction('pemasukan', '1-1300', principalAmount, `Pembayaran pokok angsuran pinjaman ${loan.id} oleh ${loan.memberName} (${methodLabel})`, date);
+            postAutoTransaction('pemasukan', '4-1100', serviceAmount, `Pendapatan jasa/keuntungan angsuran pinjaman ${loan.id} oleh ${loan.memberName} (${methodLabel})`, date);
+
+            if (outstandingAfter <= 0) {
+                const lockedAmount = loan.collateralAmount || loan.amount;
+                member.simpananTerkunci = Math.max(0, (member.simpananTerkunci || 0) - lockedAmount);
+                loan.status = 'Lunas';
+            }
+
+            req.status = 'approved';
+            req.processedBy = currentUser.name;
+            req.processedAt = `${date} ${getCurrentTimeStr()}`;
+
+            renderLoanPaymentRequestsQueue();
+            renderMemberPortal();
+            saveStateToFirebase();
+            showModal('Pembayaran Disetujui', `Pembayaran angsuran sebesar ${formatRupiah(amount)} untuk pinjaman ${loan.id} milik ${member.name} berhasil disetujui.${outstandingAfter <= 0 ? ' Pinjaman kini berstatus Lunas.' : ` Sisa pinjaman sekarang ${formatRupiah(outstandingAfter)}.`}`);
+        }
+
+        function rejectLoanPaymentRequest(reqId) {
+            if (!currentUser || currentUser.role !== 'teller') return;
+            const req = loanPaymentRequests.find(r => r.id === reqId);
+            if (!req || req.status !== 'pending') return;
+            if (!confirm('Tolak pengajuan pembayaran angsuran via transfer bank ini? Sisa pinjaman anggota tidak akan berubah.')) return;
+            req.status = 'rejected';
+            req.processedBy = currentUser.name;
+            req.processedAt = `${todayStr()} ${getCurrentTimeStr()}`;
+            renderLoanPaymentRequestsQueue();
+            saveStateToFirebase();
         }
 
         function renderTellerTodayLog() {
@@ -12613,15 +13851,15 @@
 
             if (type === 'setoran') {
                 member.simpananSukarela += amount;
-                savingsMutations.push({ memberId, date: today, desc, debit: amount, credit: 0, coaCode: '2-1100' });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc, debit: amount, credit: 0, coaCode: '2-1100' });
                 postAutoTransaction('pemasukan', '2-1100', amount, `${desc} - ${member.name} (${member.id}) oleh Teller ${currentUser.name}`, today);
             } else if (type === 'setoran_wajib') {
                 member.simpananWajib += amount;
-                savingsMutations.push({ memberId, date: today, desc, debit: amount, credit: 0, coaCode: '3-1200' });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc, debit: amount, credit: 0, coaCode: '3-1200' });
                 postAutoTransaction('pemasukan', '3-1200', amount, `${desc} - ${member.name} (${member.id}) oleh Teller ${currentUser.name}`, today);
             } else {
                 member.simpananSukarela -= amount;
-                savingsMutations.push({ memberId, date: today, desc, debit: 0, credit: amount, coaCode: '2-1100' });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc, debit: 0, credit: amount, coaCode: '2-1100' });
                 postAutoTransaction('pengeluaran', '2-1100', amount, `${desc} - ${member.name} (${member.id}) oleh Teller ${currentUser.name}`, today);
             }
 
