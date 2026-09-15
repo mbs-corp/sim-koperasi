@@ -4667,7 +4667,8 @@
 
             // 2. KEWAJIBAN (LIABILITAS)
             { code: '2-1000', name: 'Kewajiban Jangka Pendek', category: '2', type: 'liability', desc: 'Kelompok akun kewajiban jangka pendek' },
-            { code: '2-1100', name: 'Simpanan Sukarela Anggota', category: '2', type: 'liability', desc: 'Tabungan anggota yang bisa diambil sewaktu-waktu' },
+            { code: '2-1100', name: 'Setoran Simpanan Sukarela Anggota', category: '2', type: 'liability', desc: 'Tabungan anggota yang bisa diambil sewaktu-waktu - khusus mutasi setoran/penambahan saldo' },
+            { code: '2-1101', name: 'Tarikan Simpanan Sukarela Anggota', category: '2', type: 'liability', desc: 'Tabungan anggota yang bisa diambil sewaktu-waktu - khusus mutasi tarikan/pengurangan saldo (Tarikan Simpanan Sukarela)' },
             { code: '2-1200', name: 'Simpanan Berjangka (Deposito Anggota)', category: '2', type: 'liability', desc: 'Simpanan dengan jangka waktu tertentu' },
             { code: '2-1300', name: 'Utang Dana SHU Anggota', category: '2', type: 'liability', desc: 'SHU bagian anggota yang belum dibagikan' },
             { code: '2-1350', name: 'Saldo Mitra (Dana Titipan Mitra)', category: '2', type: 'liability', desc: 'Saldo float milik Mitra yang dititipkan ke koperasi untuk melayani transaksi setor/tarik/belanja anggota' },
@@ -4677,8 +4678,10 @@
             { code: '2-2110', name: 'Utang kepada Kreditur (Modul Kreditur/Investor)', category: '2', type: 'liability', desc: 'Utang/pinjaman dari Kreditur non-anggota yang tercatat di modul Kreditur/Investor' },
 
             // 3. EKUITAS (MODAL)
-            { code: '3-1100', name: 'Simpanan Pokok', category: '3', type: 'equity', desc: 'Modal awal anggota (tidak dapat diambil selama jadi anggota)' },
-            { code: '3-1200', name: 'Simpanan Wajib', category: '3', type: 'equity', desc: 'Iuran rutin bulanan anggota' },
+            { code: '3-1100', name: 'Setoran Simpanan Pokok', category: '3', type: 'equity', desc: 'Modal awal anggota (tidak dapat diambil selama jadi anggota) - khusus mutasi setoran/penambahan saldo' },
+            { code: '3-1101', name: 'Tarikan/Pencairan Simpanan Pokok', category: '3', type: 'equity', desc: 'Modal awal anggota - khusus mutasi tarikan/pencairan saldo (umumnya hanya terjadi saat Pengunduran Diri Anggota)' },
+            { code: '3-1200', name: 'Setoran Simpanan Wajib', category: '3', type: 'equity', desc: 'Iuran rutin bulanan anggota - khusus mutasi setoran/penambahan saldo' },
+            { code: '3-1201', name: 'Tarikan/Pencairan Simpanan Wajib', category: '3', type: 'equity', desc: 'Iuran rutin bulanan anggota - khusus mutasi tarikan/pencairan saldo' },
             { code: '3-1300', name: 'Modal Penyertaan', category: '3', type: 'equity', desc: 'Modal tambahan dari luar atau anggota' },
             { code: '3-1350', name: 'Modal Penyertaan dari Investor (Modul Kreditur/Investor)', category: '3', type: 'equity', desc: 'Modal yang ditanamkan Investor non-anggota yang tercatat di modul Kreditur/Investor' },
             { code: '3-1400', name: 'Cadangan Koperasi', category: '3', type: 'equity', desc: 'Bagian SHU yang disisihkan untuk pemupukan modal' },
@@ -5102,10 +5105,11 @@
             memberTransfers = asArray(data.memberTransfers);
             coaMaster = asArray(data.coaMaster).length ? asArray(data.coaMaster) : coaMaster;
             // Migrasi data lama: tambahkan akun COA baru yang dibuat setelah data pertama
-            // kali tersimpan di Firebase (mis. 3 akun khusus Unit Bisnis Koperasi) agar
-            // tetap muncul di Bagan Akun pengguna lama, tanpa mengubah/menimpa akun COA
-            // lain yang mungkin sudah dikustomisasi oleh admin.
-            const NEW_COA_CODES_TO_MIGRATE = ['4-2300', '5-6000', '5-6100', '2-2110', '3-1350', '5-1150', '5-1160'];
+            // kali tersimpan di Firebase (mis. 3 akun khusus Unit Bisnis Koperasi, serta
+            // akun tarikan Simpanan Pokok/Wajib/Sukarela yang dipisah dari akun setorannya)
+            // agar tetap muncul di Bagan Akun pengguna lama, tanpa mengubah/menimpa akun
+            // COA lain yang mungkin sudah dikustomisasi oleh admin.
+            const NEW_COA_CODES_TO_MIGRATE = ['4-2300', '5-6000', '5-6100', '2-2110', '3-1350', '5-1150', '5-1160', '2-1101', '3-1101', '3-1201'];
             NEW_COA_CODES_TO_MIGRATE.forEach(code => {
                 if (!coaMaster.some(c => c.code === code)) {
                     const defaultAccount = DEFAULT_COA_MASTER.find(c => c.code === code);
@@ -5124,6 +5128,26 @@
                 acc51150.name = 'Beban Bunga Kreditur (Pinjaman Pihak Ketiga)';
                 acc51150.desc = 'Pembayaran bunga pinjaman kepada Kreditur non-anggota dari modul Kreditur/Investor';
             }
+            // Migrasi penyesuaian nama: akun 2-1100/3-1100/3-1200 semula dipakai untuk
+            // seluruh mutasi Simpanan Sukarela/Pokok/Wajib (setoran maupun tarikan)
+            // sekaligus. Sejak fungsi COA setoran & tarikan dipisah (tarikan pindah ke
+            // akun 2-1101/3-1101/3-1201), akun-akun ini milik pengguna lama yang masih
+            // memakai nama lama disesuaikan otomatis ke nama khusus setorannya. Akun
+            // yang sudah diganti namanya sendiri oleh admin (nama tidak lagi persis sama
+            // dengan nama lama) TIDAK disentuh.
+            const RENAME_MIGRATIONS = [
+                { code: '2-1100', oldName: 'Simpanan Sukarela Anggota', newName: 'Setoran Simpanan Sukarela Anggota' },
+                { code: '3-1100', oldName: 'Simpanan Pokok', newName: 'Setoran Simpanan Pokok' },
+                { code: '3-1200', oldName: 'Simpanan Wajib', newName: 'Setoran Simpanan Wajib' }
+            ];
+            RENAME_MIGRATIONS.forEach(({ code, oldName, newName }) => {
+                const acc = coaMaster.find(c => c.code === code);
+                if (acc && acc.name === oldName) {
+                    const defaultAccount = DEFAULT_COA_MASTER.find(c => c.code === code);
+                    acc.name = newName;
+                    if (defaultAccount) acc.desc = defaultAccount.desc;
+                }
+            });
             transactions = asArray(data.transactions);
             memberSeq = data.memberSeq || memberSeq;
             accountSeq = data.accountSeq || accountSeq;
@@ -5292,15 +5316,37 @@
             return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
         }
 
+        // Nama cadangan untuk kode COA baru (2-1101/3-1101/3-1201 dst.) yang mungkin belum
+        // tersimpan di Bagan Akun (COA) pada data yang sudah lebih dulu tersimpan di
+        // Firebase/localStorage sebelum akun-akun ini ditambahkan. Dipakai sebagai fallback
+        // agar Buku Tabungan tetap menampilkan nama yang benar, bukan generik "Akun COA".
+        const COA_FALLBACK_NAMES = {
+            '2-1100': 'Setoran Simpanan Sukarela',
+            '2-1101': 'Tarikan Simpanan Sukarela',
+            '3-1100': 'Setoran Simpanan Pokok',
+            '3-1101': 'Tarikan Simpanan Pokok',
+            '3-1200': 'Setoran Simpanan Wajib',
+            '3-1201': 'Tarikan Simpanan Wajib'
+        };
+
         function getSavingsMutationCoa(mutation) {
             if (mutation.coaCode) {
                 const coa = coaMaster.find(c => c.code === mutation.coaCode);
-                return { code: mutation.coaCode, name: coa ? coa.name : 'Akun COA' };
+                return { code: mutation.coaCode, name: coa ? coa.name : (COA_FALLBACK_NAMES[mutation.coaCode] || 'Akun COA') };
             }
             const desc = String(mutation.desc || '').toLowerCase();
-            if (desc.includes('pokok')) return { code: '3-1100', name: 'Simpanan Pokok' };
-            if (desc.includes('wajib')) return { code: '3-1200', name: 'Simpanan Wajib' };
-            return { code: '2-1100', name: 'Simpanan Sukarela Anggota' };
+            const isTarikan = (mutation.credit || 0) > 0 && !((mutation.debit || 0) > 0);
+            // Simpanan Pokok & Wajib: sama seperti Sukarela, pisahkan fungsi COA antara
+            // mutasi setoran (3-1100/3-1200) dan mutasi tarikan/pencairan (3-1101/3-1201)
+            // berdasarkan arah mutasi buku tabungan.
+            if (desc.includes('pokok')) return isTarikan ? { code: '3-1101', name: 'Tarikan/Pencairan Simpanan Pokok' } : { code: '3-1100', name: 'Setoran Simpanan Pokok' };
+            if (desc.includes('wajib')) return isTarikan ? { code: '3-1201', name: 'Tarikan/Pencairan Simpanan Wajib' } : { code: '3-1200', name: 'Setoran Simpanan Wajib' };
+            // Simpanan Sukarela: pisahkan fungsi COA antara mutasi setoran (kolom debit
+            // bertambah, akun 2-1100) dan mutasi tarikan (kolom kredit bertambah, akun
+            // 2-1101), berdasarkan arah mutasi buku tabungan itu sendiri, supaya kedua
+            // jenis mutasi tercatat pada akun COA yang berbeda meski tidak diberi coaCode
+            // eksplisit (mis. Transfer Antar Anggota, Belanja/Tarik Tunai via Mitra).
+            return isTarikan ? { code: '2-1101', name: 'Tarikan Simpanan Sukarela Anggota' } : { code: '2-1100', name: 'Setoran Simpanan Sukarela Anggota' };
         }
 
         // modalWaCallback: fungsi opsional yang dijalankan saat tombol "Kirim ke WA" pada
@@ -6316,12 +6362,12 @@
             const today = new Date().toISOString().split('T')[0];
             if (type === 'setor') {
                 member.simpananSukarela += amount;
-                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc, debit: amount, credit: 0 });
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc, debit: amount, credit: 0, coaCode: '2-1100' });
                 postAutoTransaction('pemasukan', '2-1100', amount, `${desc} - ${member.name} (${member.id})`, today);
             } else {
                 member.simpananSukarela -= amount;
-                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc, debit: 0, credit: amount });
-                postAutoTransaction('pengeluaran', '2-1100', amount, `${desc} - ${member.name} (${member.id})`, today);
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc, debit: 0, credit: amount, coaCode: '2-1101' });
+                postAutoTransaction('pengeluaran', '2-1101', amount, `${desc} - ${member.name} (${member.id})`, today);
             }
 
             document.getElementById('mm-mutation-amount').value = '';
@@ -6404,16 +6450,16 @@
 
             const today = new Date().toISOString().split('T')[0];
             if (totalPokok > 0) {
-                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc: 'Pencairan Simpanan Pokok - Pengunduran Diri Anggota', debit: 0, credit: totalPokok });
-                postAutoTransaction('pengeluaran', '3-1100', totalPokok, `Pencairan Simpanan Pokok - Pengunduran Diri ${member.name} (${member.id})`, today);
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc: 'Pencairan Simpanan Pokok - Pengunduran Diri Anggota', debit: 0, credit: totalPokok, coaCode: '3-1101' });
+                postAutoTransaction('pengeluaran', '3-1101', totalPokok, `Pencairan Simpanan Pokok - Pengunduran Diri ${member.name} (${member.id})`, today);
             }
             if (totalWajib > 0) {
-                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc: 'Pencairan Simpanan Wajib - Pengunduran Diri Anggota', debit: 0, credit: totalWajib });
-                postAutoTransaction('pengeluaran', '3-1200', totalWajib, `Pencairan Simpanan Wajib - Pengunduran Diri ${member.name} (${member.id})`, today);
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc: 'Pencairan Simpanan Wajib - Pengunduran Diri Anggota', debit: 0, credit: totalWajib, coaCode: '3-1201' });
+                postAutoTransaction('pengeluaran', '3-1201', totalWajib, `Pencairan Simpanan Wajib - Pengunduran Diri ${member.name} (${member.id})`, today);
             }
             if (totalSukarela > 0) {
-                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc: 'Pencairan Simpanan Sukarela - Pengunduran Diri Anggota', debit: 0, credit: totalSukarela });
-                postAutoTransaction('pengeluaran', '2-1100', totalSukarela, `Pencairan Simpanan Sukarela - Pengunduran Diri ${member.name} (${member.id})`, today);
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc: 'Pencairan Simpanan Sukarela - Pengunduran Diri Anggota', debit: 0, credit: totalSukarela, coaCode: '2-1101' });
+                postAutoTransaction('pengeluaran', '2-1101', totalSukarela, `Pencairan Simpanan Sukarela - Pengunduran Diri ${member.name} (${member.id})`, today);
             }
 
             member.simpananPokok = 0;
@@ -8000,7 +8046,7 @@
                 desc: `Pembayaran Angsuran Pinjaman ${loan.id} (Potong Simpanan Sukarela)`,
                 debit: 0,
                 credit: amount,
-                coaCode: '2-1100'
+                coaCode: '2-1101'
             });
 
             loanPayments.unshift({
@@ -8153,8 +8199,10 @@
             savingsMutations.push({ time: getCurrentTimeStr(), memberId: recipient.id, date: today, desc: `Transfer Masuk dari ${sender.name} (${sender.id})`, debit: amount, credit: 0 });
             // Catatan: Transfer antar anggota tidak diposting ke buku besar (transactions)
             // karena bersifat net-zero pada level COA — saldo hanya berpindah antar
-            // sub-rekening anggota dalam akun yang sama (2-1100 Simpanan Sukarela
-            // Anggota), tanpa mengubah total kas atau total kewajiban koperasi.
+            // sub-rekening anggota dalam kelompok akun Simpanan Sukarela yang sama
+            // (2-1100 Setoran untuk sisi penerima, 2-1101 Tarikan untuk sisi pengirim
+            // — dipetakan otomatis oleh getSavingsMutationCoa() berdasarkan kolom
+            // debit/kredit), tanpa mengubah total kas atau total kewajiban koperasi.
 
             const newTransfer = {
                 id: 'TRF-' + Math.floor(100 + Math.random() * 900),
@@ -8281,9 +8329,10 @@
             savingsMutations.push({ time: getCurrentTimeStr(), memberId: member.id, date: today, desc: `${desc} (Mitra ${mitra.name})${fee > 0 ? ` - termasuk biaya admin ${formatRupiah(fee)}` : ''}`, debit: 0, credit: totalDebit });
 
             // Catatan: nominal pokok belanja TIDAK diposting ke buku besar (transactions) karena
-            // hanya memindahkan saldo antara Simpanan Sukarela Anggota (2-1100) dan Saldo Mitra
-            // (2-1350), net-zero pada level neraca koperasi. Bagian Koperasi dari Biaya Admin
-            // (jika ada) tetap diposting karena merupakan pendapatan riil koperasi.
+            // hanya memindahkan saldo antara Simpanan Sukarela Anggota (tercatat di buku
+            // tabungan sebagai tarikan, akun 2-1101) dan Saldo Mitra (2-1350), net-zero
+            // pada level neraca koperasi. Bagian Koperasi dari Biaya Admin (jika ada)
+            // tetap diposting karena merupakan pendapatan riil koperasi.
             if (koperasiShare > 0) {
                 postAutoTransaction('pemasukan', '4-1250', koperasiShare, `Biaya Admin Belanja Anggota ke Mitra ${mitra.name} (${mitra.id}) - dibebankan ke ${member.name} (${member.id})${mitraShare > 0 ? ` (Bagian Koperasi dari total biaya ${formatRupiah(fee)}, Bagian Mitra ${formatRupiah(mitraShare)})` : ''}`, today);
             }
@@ -8932,17 +8981,17 @@
                     const sourceNotes = [];
                     if (fromSukarela > 0) {
                         member.simpananSukarela -= fromSukarela;
-                        savingsMutations.push({ time: getCurrentTimeStr(), memberId: member.id, date: todayStr, desc: `Auto Debet Tunggakan Pinjaman ${loan.id} - Simpanan Sukarela (Jatuh Tempo ${dueLabel})`, debit: 0, credit: fromSukarela, coaCode: '2-1100' });
+                        savingsMutations.push({ time: getCurrentTimeStr(), memberId: member.id, date: todayStr, desc: `Auto Debet Tunggakan Pinjaman ${loan.id} - Simpanan Sukarela (Jatuh Tempo ${dueLabel})`, debit: 0, credit: fromSukarela, coaCode: '2-1101' });
                         sourceNotes.push(`Sukarela ${formatRupiah(fromSukarela)}`);
                     }
                     if (fromWajib > 0) {
                         member.simpananWajib -= fromWajib;
-                        savingsMutations.push({ time: getCurrentTimeStr(), memberId: member.id, date: todayStr, desc: `Auto Debet Tunggakan Pinjaman ${loan.id} - Simpanan Wajib (Jatuh Tempo ${dueLabel})`, debit: 0, credit: fromWajib, coaCode: '3-1200' });
+                        savingsMutations.push({ time: getCurrentTimeStr(), memberId: member.id, date: todayStr, desc: `Auto Debet Tunggakan Pinjaman ${loan.id} - Simpanan Wajib (Jatuh Tempo ${dueLabel})`, debit: 0, credit: fromWajib, coaCode: '3-1201' });
                         sourceNotes.push(`Wajib ${formatRupiah(fromWajib)}`);
                     }
                     if (fromPokok > 0) {
                         member.simpananPokok -= fromPokok;
-                        savingsMutations.push({ time: getCurrentTimeStr(), memberId: member.id, date: todayStr, desc: `Auto Debet Tunggakan Pinjaman ${loan.id} - Simpanan Pokok (Jatuh Tempo ${dueLabel})`, debit: 0, credit: fromPokok, coaCode: '3-1100' });
+                        savingsMutations.push({ time: getCurrentTimeStr(), memberId: member.id, date: todayStr, desc: `Auto Debet Tunggakan Pinjaman ${loan.id} - Simpanan Pokok (Jatuh Tempo ${dueLabel})`, debit: 0, credit: fromPokok, coaCode: '3-1101' });
                         sourceNotes.push(`Pokok ${formatRupiah(fromPokok)}`);
                     }
 
@@ -12736,12 +12785,13 @@
 
             // Catatan: nominal pokok transaksi Mitra ke Anggota TIDAK diposting ke buku besar
             // (transactions) karena tidak melibatkan Kas Operasional/Bank koperasi — hanya
-            // memindahkan saldo antara Simpanan Sukarela Anggota (2-1100) dan Saldo Mitra
-            // (2-1350), sama seperti Transfer Antar Anggota yang bersifat net-zero pada level
-            // neraca koperasi. Bagian Koperasi dari biaya admin (jika ada) TETAP diposting
-            // karena merupakan pendapatan riil koperasi yang dibebankan dari anggota; Bagian
-            // Mitra tidak diposting karena sudah menjadi tambahan Saldo Mitra (bukan pendapatan
-            // koperasi).
+            // memindahkan saldo antara Simpanan Sukarela Anggota (tercatat di buku tabungan
+            // sebagai setoran 2-1100 atau tarikan 2-1101 sesuai arah transaksi) dan Saldo
+            // Mitra (2-1350), sama seperti Transfer Antar Anggota yang bersifat net-zero pada
+            // level neraca koperasi. Bagian Koperasi dari biaya admin (jika ada) TETAP
+            // diposting karena merupakan pendapatan riil koperasi yang dibebankan dari
+            // anggota; Bagian Mitra tidak diposting karena sudah menjadi tambahan Saldo
+            // Mitra (bukan pendapatan koperasi).
             if (koperasiShare > 0) {
                 postAutoTransaction('pemasukan', '4-1250', koperasiShare, `Biaya Admin ${typeLabels[type]} via Mitra ${mitra.name} (${mitra.id}) - dibebankan ke ${member.name} (${member.id})${mitraShare > 0 ? ` (Bagian Koperasi dari total biaya ${formatRupiah(fee)}, Bagian Mitra ${formatRupiah(mitraShare)})` : ''}`, today);
             }
@@ -14214,8 +14264,8 @@
                 postAutoTransaction('pemasukan', '3-1200', amount, `${desc} - ${member.name} (${member.id}) oleh Teller ${currentUser.name}`, today);
             } else {
                 member.simpananSukarela -= amount;
-                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc, debit: 0, credit: amount, coaCode: '2-1100' });
-                postAutoTransaction('pengeluaran', '2-1100', amount, `${desc} - ${member.name} (${member.id}) oleh Teller ${currentUser.name}`, today);
+                savingsMutations.push({ time: getCurrentTimeStr(), memberId, date: today, desc, debit: 0, credit: amount, coaCode: '2-1101' });
+                postAutoTransaction('pengeluaran', '2-1101', amount, `${desc} - ${member.name} (${member.id}) oleh Teller ${currentUser.name}`, today);
             }
 
             const txRecord = {
