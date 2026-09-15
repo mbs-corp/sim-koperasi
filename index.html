@@ -240,6 +240,7 @@
                 <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-bounce" style="animation-delay:150ms"></span>
                 <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-bounce" style="animation-delay:300ms"></span>
             </div>
+            <p class="text-[10px] text-slate-400">Permintaan otomatis dibatalkan jika tidak direspons dalam <span id="tl-wait-modal-countdown" class="font-semibold text-slate-600">15</span> detik.</p>
             <button type="button" onclick="cancelTellerPinRequest()" class="w-full text-center text-[11px] text-slate-400 hover:text-slate-600 font-medium pt-1">
                 Batalkan Permintaan
             </button>
@@ -13192,6 +13193,11 @@
         // id permintaan otorisasi PIN yang sedang ditunggu jawabannya oleh sesi Teller ini
         // (hanya berlaku lokal di sesi ini, tidak ikut disinkronkan ke Firebase).
         let currentTellerPinRequestId = null;
+        // Handle timer batas waktu 15 detik untuk otorisasi PIN Teller: jika anggota tidak
+        // merespons dalam waktu tersebut, permintaan otomatis dibatalkan (lihat
+        // startTellerPinRequestCountdown() & handleTellerPinRequestTimeout()).
+        let tellerPinRequestTimeoutHandle = null;
+        let tellerPinRequestCountdownInterval = null;
 
         function toggleTellerPinField(shouldResetAuth = true) {
             const type = document.getElementById('tl-select-type').value;
@@ -13209,6 +13215,7 @@
         // status aktif/nonaktif tombol Proses & Cetak Kwitansi. Permintaan yang masih menggantung
         // (belum dijawab anggota) turut dibatalkan agar tidak menjadi permintaan basi di sisi anggota.
         function resetTellerPinAuth() {
+            stopTellerPinRequestCountdown();
             if (currentTellerPinRequestId) {
                 const pendingReq = tellerPinRequests.find(r => r.id === currentTellerPinRequestId);
                 if (pendingReq && pendingReq.status === 'pending') {
@@ -13302,11 +13309,82 @@
             document.getElementById('tl-wait-modal-container').classList.remove('hidden');
 
             saveStateToFirebase(true);
+            startTellerPinRequestCountdown();
+        }
+
+        // Menjalankan hitung mundur 15 detik pada modal "Menunggu Otorisasi Anggota" di layar
+        // Teller. Jika permintaan belum dijawab (approved/rejected) sebelum waktu habis, panggil
+        // handleTellerPinRequestTimeout() untuk membatalkan otomatis transaksi tersebut.
+        function startTellerPinRequestCountdown() {
+            stopTellerPinRequestCountdown();
+            let secondsLeft = 15;
+            const countdownEl = document.getElementById('tl-wait-modal-countdown');
+            if (countdownEl) countdownEl.innerText = secondsLeft;
+            tellerPinRequestCountdownInterval = setInterval(() => {
+                secondsLeft--;
+                if (countdownEl) countdownEl.innerText = Math.max(secondsLeft, 0);
+            }, 1000);
+            tellerPinRequestTimeoutHandle = setTimeout(handleTellerPinRequestTimeout, 15000);
+        }
+
+        // Menghentikan timer/interval hitung mundur otorisasi PIN Teller (dipanggil begitu
+        // permintaan sudah dijawab, dibatalkan manual, atau direset).
+        function stopTellerPinRequestCountdown() {
+            if (tellerPinRequestTimeoutHandle) {
+                clearTimeout(tellerPinRequestTimeoutHandle);
+                tellerPinRequestTimeoutHandle = null;
+            }
+            if (tellerPinRequestCountdownInterval) {
+                clearInterval(tellerPinRequestCountdownInterval);
+                tellerPinRequestCountdownInterval = null;
+            }
+        }
+
+        // Dipanggil otomatis jika dalam 15 detik anggota tidak mengonfirmasi (menyetujui/menolak)
+        // permintaan otorisasi PIN. Transaksi tarikan dibatalkan: permintaan ditandai 'cancelled',
+        // modal menunggu ditutup, dan tombol "Proses & Cetak Kwitansi" tetap/kembali nonaktif
+        // sampai otorisasi PIN diulang dan berhasil.
+        function handleTellerPinRequestTimeout() {
+            tellerPinRequestTimeoutHandle = null;
+            if (tellerPinRequestCountdownInterval) {
+                clearInterval(tellerPinRequestCountdownInterval);
+                tellerPinRequestCountdownInterval = null;
+            }
+            if (!currentTellerPinRequestId) return;
+
+            const req = tellerPinRequests.find(r => r.id === currentTellerPinRequestId);
+            if (req && req.status === 'pending') {
+                req.status = 'cancelled';
+            }
+            tellerPinRequests = tellerPinRequests.filter(r => r.id !== currentTellerPinRequestId);
+            currentTellerPinRequestId = null;
+            saveStateToFirebase();
+
+            const waitModal = document.getElementById('tl-wait-modal-container');
+            if (waitModal) waitModal.classList.add('hidden');
+
+            tellerPinAuthorized = false;
+            tellerPinAuthorizedAmount = null;
+            tellerPinAuthorizedMemberId = null;
+            tellerPinAuthorizedType = null;
+            setTellerAmountLock(false);
+            const pinInput = document.getElementById('tl-input-pin');
+            if (pinInput) pinInput.value = '';
+            updateTellerPinButtonUI();
+            updateTellerSubmitButtonState();
+
+            const errorBox = document.getElementById('tl-form-error');
+            const errorText = document.getElementById('tl-form-error-text');
+            if (errorBox && errorText) {
+                errorText.innerText = 'Otorisasi PIN tidak dikonfirmasi dalam 15 detik. Transaksi dibatalkan, silakan klik kembali tombol "Otorisasi PIN Anggota" untuk mengulang.';
+                errorBox.classList.remove('hidden');
+            }
         }
 
         // Membatalkan permintaan otorisasi yang masih menunggu jawaban anggota (dipanggil dari
         // tombol "Batalkan Permintaan" pada modal menunggu di layar Teller).
         function cancelTellerPinRequest() {
+            stopTellerPinRequestCountdown();
             if (currentTellerPinRequestId) {
                 const req = tellerPinRequests.find(r => r.id === currentTellerPinRequestId);
                 if (req && req.status === 'pending') req.status = 'cancelled';
@@ -13325,6 +13403,7 @@
             const req = tellerPinRequests.find(r => r.id === currentTellerPinRequestId);
             if (!req || req.status === 'pending') return; // masih menunggu, tidak ada yang perlu dilakukan
 
+            stopTellerPinRequestCountdown();
             document.getElementById('tl-wait-modal-container').classList.add('hidden');
 
             if (req.status === 'approved') {
