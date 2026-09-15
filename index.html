@@ -1034,7 +1034,31 @@
 
                     <!-- Mutation History Table -->
                     <div>
-                        <p class="text-[11px] text-slate-400 mb-2">Buku tabungan mencatat mutasi setoran awal (pokok & wajib) serta setoran/penarikan simpanan sukarela dan transfer antar anggota atas nama Anda. Saldo berjalan bersifat kumulatif seluruh mutasi tabungan Anda.</p>
+                        <p class="text-[11px] text-slate-400 mb-2">Buku tabungan mencatat mutasi setoran awal (pokok & wajib) serta setoran/penarikan simpanan sukarela dan transfer antar anggota atas nama Anda. Saldo berjalan bersifat kumulatif seluruh mutasi tabungan Anda. Transaksi terbaru ditampilkan paling atas.</p>
+
+                        <div class="flex flex-wrap items-center gap-2 mb-3">
+                            <label class="text-[11px] font-semibold text-slate-600 flex items-center gap-1"><i class="fa-solid fa-filter text-slate-400"></i> Filter:</label>
+                            <select id="mp-savings-filter-month" onchange="renderMemberSavingsBook()" class="text-xs border border-slate-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="">Semua Bulan</option>
+                                <option value="01">Januari</option>
+                                <option value="02">Februari</option>
+                                <option value="03">Maret</option>
+                                <option value="04">April</option>
+                                <option value="05">Mei</option>
+                                <option value="06">Juni</option>
+                                <option value="07">Juli</option>
+                                <option value="08">Agustus</option>
+                                <option value="09">September</option>
+                                <option value="10">Oktober</option>
+                                <option value="11">November</option>
+                                <option value="12">Desember</option>
+                            </select>
+                            <select id="mp-savings-filter-year" onchange="renderMemberSavingsBook()" class="text-xs border border-slate-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="">Semua Tahun</option>
+                            </select>
+                            <button type="button" onclick="resetMemberSavingsFilter()" class="text-[11px] text-slate-500 hover:text-brand-600 underline">Reset Filter</button>
+                        </div>
+
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-xs text-slate-600">
                                 <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
@@ -6882,14 +6906,40 @@
 
             const history = savingsMutations.filter(mu => mu.memberId === member.id);
 
-            if (history.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">Belum ada mutasi tabungan.</td></tr>`;
+            // Saldo berjalan WAJIB dihitung berdasarkan urutan kronologis asli (lama -> baru)
+            // agar tetap kumulatif & akurat, terlepas dari urutan tampilan atau filter periode.
+            let runningBalance = 0;
+            const historyWithBalance = history.map(h => {
+                runningBalance += (h.debit - h.credit);
+                return Object.assign({}, h, { balance: runningBalance });
+            });
+
+            populateMemberSavingsYearFilter(historyWithBalance);
+
+            const filterMonth = document.getElementById('mp-savings-filter-month') ? document.getElementById('mp-savings-filter-month').value : '';
+            const filterYear = document.getElementById('mp-savings-filter-year') ? document.getElementById('mp-savings-filter-year').value : '';
+
+            const filtered = historyWithBalance.filter(h => {
+                if (!h.date) return false;
+                const parts = h.date.split('-'); // format ISO: YYYY-MM-DD
+                const y = parts[0], m = parts[1];
+                if (filterYear && y !== filterYear) return false;
+                if (filterMonth && m !== filterMonth) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                const emptyMsg = (filterMonth || filterYear) ? 'Tidak ada mutasi tabungan pada periode yang dipilih.' : 'Belum ada mutasi tabungan.';
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">${emptyMsg}</td></tr>`;
+                renderMemberSavingsDepositRequests();
+                renderCoopBankAccountsInfo('msd-bank-accounts-info');
                 return;
             }
 
-            let runningBalance = 0;
-            tbody.innerHTML = history.map(h => {
-                runningBalance += (h.debit - h.credit);
+            // Urutkan agar transaksi paling atas adalah transaksi terbaru (kebalikan urutan kronologis)
+            const displayList = filtered.slice().reverse();
+
+            tbody.innerHTML = displayList.map(h => {
                 const coa = getSavingsMutationCoa(h);
                 return `
                     <tr class="hover:bg-slate-50">
@@ -6899,13 +6949,42 @@
                         <td class="py-2.5 px-3"><span class="font-mono text-[11px] text-brand-800">${coa.code}</span><br><span class="text-[10px] text-slate-400">${coa.name}</span></td>
                         <td class="py-2.5 px-3 text-right font-mono text-emerald-700">${h.debit > 0 ? formatRupiah(h.debit) : '-'}</td>
                         <td class="py-2.5 px-3 text-right font-mono text-rose-700">${h.credit > 0 ? formatRupiah(h.credit) : '-'}</td>
-                        <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800">${formatRupiah(runningBalance)}</td>
+                        <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800">${formatRupiah(h.balance)}</td>
                     </tr>
                 `;
             }).join('');
 
             renderMemberSavingsDepositRequests();
             renderCoopBankAccountsInfo('msd-bank-accounts-info');
+        }
+
+        // Mengisi opsi dropdown filter Tahun secara dinamis berdasarkan tahun-tahun yang
+        // benar-benar ada pada riwayat mutasi tabungan anggota yang sedang login, sambil
+        // mempertahankan pilihan tahun yang sedang aktif jika masih tersedia.
+        function populateMemberSavingsYearFilter(historyWithBalance) {
+            const yearSelect = document.getElementById('mp-savings-filter-year');
+            if (!yearSelect) return;
+
+            const years = Array.from(new Set(historyWithBalance.map(h => (h.date || '').split('-')[0]).filter(Boolean))).sort((a, b) => b.localeCompare(a));
+            const currentValue = yearSelect.value;
+            const optionsHtml = ['<option value="">Semua Tahun</option>'].concat(years.map(y => `<option value="${y}">${y}</option>`)).join('');
+
+            if (yearSelect.getAttribute('data-options') !== optionsHtml) {
+                yearSelect.innerHTML = optionsHtml;
+                yearSelect.setAttribute('data-options', optionsHtml);
+                if (years.indexOf(currentValue) !== -1) {
+                    yearSelect.value = currentValue;
+                }
+            }
+        }
+
+        // Reset filter bulan/tahun pada Buku Tabungan Saya lalu render ulang tabel.
+        function resetMemberSavingsFilter() {
+            const monthSelect = document.getElementById('mp-savings-filter-month');
+            const yearSelect = document.getElementById('mp-savings-filter-year');
+            if (monthSelect) monthSelect.value = '';
+            if (yearSelect) yearSelect.value = '';
+            renderMemberSavingsBook();
         }
 
         // Anggota mengajukan pencatatan Setoran Simpanan via Transfer Bank: anggota sudah
